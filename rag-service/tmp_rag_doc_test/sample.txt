@@ -1,0 +1,3 @@
+Redis caching
+
+Redis stores hot data in memory to reduce database load.

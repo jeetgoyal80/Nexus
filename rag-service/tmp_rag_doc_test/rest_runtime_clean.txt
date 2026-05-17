@@ -1,0 +1,1 @@
+PostgreSQL indexes speed up lookup queries. Redis caching keeps hot backend data in memory and reduces database pressure.
