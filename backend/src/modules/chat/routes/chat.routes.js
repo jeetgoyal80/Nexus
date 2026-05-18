@@ -5,6 +5,7 @@ import { chatMessageSchema, validate } from "../validators/chat.validation.js";
 
 const router = Router();
 
+router.post("/stream/:botId", optionalAuthenticate, validate(chatMessageSchema), chatController.streamChat);
 router.post("/:botId", optionalAuthenticate, validate(chatMessageSchema), chatController.executeChat);
 
 export default router;

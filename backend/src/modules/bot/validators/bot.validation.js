@@ -7,12 +7,20 @@ import {
   BOT_VISIBILITY,
 } from "../constants/bot.constants.js";
 
+const instructionsSchema = z
+  .union([
+    z.string().trim().max(4000),
+    z.array(z.string().trim().min(1).max(500)).max(20),
+  ])
+  .transform((value) => (Array.isArray(value) ? value.map((item) => `- ${item}`).join("\n") : value));
+
 const createBotFields = {
   name: z.string().trim().min(2).max(80),
   description: z.string().trim().max(500).optional().default(""),
   role: z.string().trim().min(2).max(120),
   tone: z.enum(Object.values(BOT_TONE)).optional(),
-  instructions: z.string().trim().max(4000).optional().default(""),
+  instructions: instructionsSchema.optional().default(""),
+  strictKnowledgeMode: z.boolean().optional().default(false),
   outputFormat: z.enum(Object.values(BOT_OUTPUT_FORMAT)).optional(),
   theme: z.string().trim().min(2).max(40).optional(),
   welcomeMessage: z.string().trim().max(300).optional(),
@@ -25,7 +33,8 @@ const updateBotFields = {
   description: z.string().trim().max(500).optional(),
   role: z.string().trim().min(2).max(120).optional(),
   tone: z.enum(Object.values(BOT_TONE)).optional(),
-  instructions: z.string().trim().max(4000).optional(),
+  instructions: instructionsSchema.optional(),
+  strictKnowledgeMode: z.boolean().optional(),
   outputFormat: z.enum(Object.values(BOT_OUTPUT_FORMAT)).optional(),
   theme: z.string().trim().min(2).max(40).optional(),
   welcomeMessage: z.string().trim().max(300).optional(),

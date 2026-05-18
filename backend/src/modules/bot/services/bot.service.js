@@ -16,6 +16,7 @@ const sanitizeUpdatePayload = (payload) => {
     "role",
     "tone",
     "instructions",
+    "strictKnowledgeMode",
     "outputFormat",
     "theme",
     "welcomeMessage",

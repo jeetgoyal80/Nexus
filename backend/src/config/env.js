@@ -16,6 +16,15 @@ const envSchema = z.object({
   GROQ_MODEL: z.string().default("llama-3.1-8b-instant"),
   RAG_SERVICE_URL: z.string().url().default("http://localhost:8001"),
   RAG_TOP_K: z.coerce.number().default(5),
+  REDIS_URL: z.string().default("redis://localhost:6379"),
+  REDIS_TLS_REJECT_UNAUTHORIZED: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+  REDIS_CONNECT_TIMEOUT_MS: z.coerce.number().default(10000),
+  REDIS_MAX_RECONNECT_DELAY_MS: z.coerce.number().default(10000),
+  UPLOAD_DIR: z.string().default("uploads"),
+  INGESTION_WORKER_CONCURRENCY: z.coerce.number().default(2),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   COOKIE_DOMAIN: z.string().optional(),
 });

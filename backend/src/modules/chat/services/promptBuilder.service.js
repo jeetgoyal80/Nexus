@@ -14,7 +14,16 @@ const formatHistory = (history = []) => {
 };
 
 export const promptBuilderService = {
-  buildPrompt({ role, tone, instructions, outputFormat, history = [], retrievedContext = [], userMessage }) {
+  buildPrompt({
+    role,
+    tone,
+    instructions,
+    outputFormat,
+    strictKnowledgeMode = false,
+    history = [],
+    retrievedContext = [],
+    userMessage,
+  }) {
     const sections = [
       "You are the runtime engine for a configurable SaaS chatbot.",
       `Role: ${role}`,
@@ -22,6 +31,12 @@ export const promptBuilderService = {
       `Output Format: ${outputFormatInstructions[outputFormat] || outputFormatInstructions.paragraph}`,
       "Stay within the configured behavior. Do not claim access to documents or tools that were not provided.",
     ];
+
+    if (strictKnowledgeMode) {
+      sections.push(
+        "Strict Knowledge Mode: Answer only from retrieved knowledge context. If the retrieved context does not contain the answer, clearly say that the answer is not available in the uploaded knowledge documents.",
+      );
+    }
 
     if (instructions) {
       sections.push(`Custom Instructions: ${instructions}`);
@@ -40,6 +55,10 @@ export const promptBuilderService = {
           .join("\n\n")}`,
       );
       sections.push("Use the retrieved context when it is relevant. If the context is insufficient, say so clearly.");
+    } else if (strictKnowledgeMode) {
+      sections.push(
+        "Relevant Retrieved Context: No relevant uploaded knowledge was retrieved for this question. You must not answer from general knowledge.",
+      );
     }
 
     sections.push(`User Message: ${userMessage}`);

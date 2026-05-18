@@ -43,6 +43,10 @@ const botSchema = new mongoose.Schema(
       maxlength: 4000,
       default: "",
     },
+    strictKnowledgeMode: {
+      type: Boolean,
+      default: false,
+    },
     outputFormat: {
       type: String,
       enum: Object.values(BOT_OUTPUT_FORMAT),
@@ -91,6 +95,7 @@ botSchema.methods.toClientObject = function toClientObject() {
     role: this.role,
     tone: this.tone,
     instructions: this.instructions,
+    strictKnowledgeMode: this.strictKnowledgeMode,
     outputFormat: this.outputFormat,
     theme: this.theme,
     welcomeMessage: this.welcomeMessage,
