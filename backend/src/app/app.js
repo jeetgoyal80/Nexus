@@ -11,12 +11,32 @@ import { HTTP_STATUS } from "../shared/constants/httpStatus.js";
 import { env } from "../config/env.js";
 
 const app = express();
+const corsOrigins = env.CORS_ORIGIN.split(",").map((origin) => origin.trim());
+const isLocalDevOrigin = (origin) => {
+  if (env.isProduction || !origin) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+};
 
 app.use(helmet());
 
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || corsOrigins.includes(origin) || isLocalDevOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new ApiError(HTTP_STATUS.FORBIDDEN, `CORS origin not allowed: ${origin}`));
+    },
     credentials: true,
   }),
 );

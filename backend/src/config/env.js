@@ -14,8 +14,12 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODEL: z.string().default("llama-3.1-8b-instant"),
+  GROQ_MAX_COMPLETION_TOKENS: z.coerce.number().default(700),
   RAG_SERVICE_URL: z.string().url().default("http://localhost:8001"),
-  RAG_TOP_K: z.coerce.number().default(5),
+  RAG_TOP_K: z.coerce.number().default(3),
+  RAG_CONTEXT_MAX_CHARS: z.coerce.number().default(4500),
+  RAG_CONTEXT_CHUNK_MAX_CHARS: z.coerce.number().default(1500),
+  CHAT_HISTORY_LIMIT: z.coerce.number().default(4),
   REDIS_URL: z.string().default("redis://localhost:6379"),
   REDIS_TLS_REJECT_UNAUTHORIZED: z
     .enum(["true", "false"])

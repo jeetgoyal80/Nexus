@@ -22,6 +22,7 @@ export const groqProvider = {
       body: JSON.stringify({
         model: env.GROQ_MODEL,
         temperature,
+        max_tokens: env.GROQ_MAX_COMPLETION_TOKENS,
         messages: [
           {
             role: "system",
@@ -73,6 +74,7 @@ export const groqProvider = {
       body: JSON.stringify({
         model: env.GROQ_MODEL,
         temperature,
+        max_tokens: env.GROQ_MAX_COMPLETION_TOKENS,
         stream: true,
         messages: [
           {

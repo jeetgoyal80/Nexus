@@ -6,13 +6,6 @@ const outputFormatInstructions = {
   [BOT_OUTPUT_FORMAT.STRUCTURED_JSON]: "Respond as valid JSON that matches the user's intent.",
 };
 
-const formatHistory = (history = []) => {
-  return history
-    .slice(-12)
-    .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
-    .join("\n");
-};
-
 export const promptBuilderService = {
   buildPrompt({
     role,
@@ -20,9 +13,7 @@ export const promptBuilderService = {
     instructions,
     outputFormat,
     strictKnowledgeMode = false,
-    history = [],
     retrievedContext = [],
-    userMessage,
   }) {
     const sections = [
       "You are the runtime engine for a configurable SaaS chatbot.",
@@ -42,12 +33,6 @@ export const promptBuilderService = {
       sections.push(`Custom Instructions: ${instructions}`);
     }
 
-    const conversationContext = formatHistory(history);
-
-    if (conversationContext) {
-      sections.push(`Conversation History:\n${conversationContext}`);
-    }
-
     if (retrievedContext.length > 0) {
       sections.push(
         `Relevant Retrieved Context:\n${retrievedContext
@@ -60,8 +45,6 @@ export const promptBuilderService = {
         "Relevant Retrieved Context: No relevant uploaded knowledge was retrieved for this question. You must not answer from general knowledge.",
       );
     }
-
-    sections.push(`User Message: ${userMessage}`);
 
     return sections.join("\n\n");
   },

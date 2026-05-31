@@ -8,8 +8,14 @@ export const chatMessageSchema = z.object({
   }),
   body: z.object({
     message: z.string().trim().min(1).max(4000),
-    conversationId: z.string().trim().optional(),
-    sessionId: z.string().trim().max(120).optional(),
+    conversationId: z.preprocess(
+      (value) => (value === null || value === "" ? undefined : value),
+      z.string().trim().optional(),
+    ),
+    sessionId: z.preprocess(
+      (value) => (value === null || value === "" ? undefined : value),
+      z.string().trim().max(120).optional(),
+    ),
   }),
 });
 

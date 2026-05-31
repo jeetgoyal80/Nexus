@@ -1,9 +1,10 @@
 import { groqProvider } from "../../../providers/llm/groq.provider.js";
+import { env } from "../../../config/env.js";
 
 export const llmOrchestratorService = {
   buildMessages({ history, userMessage }) {
     return [
-      ...history.slice(-12).map((message) => ({
+      ...history.slice(-env.CHAT_HISTORY_LIMIT).map((message) => ({
         role: message.role,
         content: message.content,
       })),

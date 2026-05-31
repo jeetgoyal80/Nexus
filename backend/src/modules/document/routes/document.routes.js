@@ -6,16 +6,25 @@ import { botIdParamSchema, documentIdParamSchema, validate } from "../validators
 
 const router = Router();
 
-router.use(authenticate);
-
 router.post(
   "/bots/:botId/documents",
+  authenticate,
   validate(botIdParamSchema),
   uploadDocument.single("file"),
   documentController.uploadDocument,
 );
 
-router.get("/bots/:botId/documents", validate(botIdParamSchema), documentController.getBotDocuments);
-router.get("/documents/:id", validate(documentIdParamSchema), documentController.getDocumentStatus);
+router.get(
+  "/bots/:botId/documents",
+  authenticate,
+  validate(botIdParamSchema),
+  documentController.getBotDocuments,
+);
+router.get(
+  "/documents/:id",
+  authenticate,
+  validate(documentIdParamSchema),
+  documentController.getDocumentStatus,
+);
 
 export default router;
