@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type React from "react";
-import { CheckCircle2, Copy, ExternalLink, KeyRound, Rocket, TerminalSquare } from "lucide-react";
+import {
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  KeyRound,
+  RefreshCw,
+  Rocket,
+  TerminalSquare,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout, PageHeader } from "@/layouts/dashboard-layout";
@@ -53,7 +61,16 @@ function Deployment() {
             onCopy={copyText}
             onDeploy={() => mutations.deploy.mutate(agent.id)}
             onUnpublish={() => mutations.unpublish.mutate(agent.id)}
-            busy={mutations.deploy.isPending || mutations.unpublish.isPending}
+            onRegenerateKey={() => mutations.regeneratePublicKey.mutate(agent.id)}
+            onUpdateDeployment={(payload) =>
+              mutations.updateDeploymentAccess.mutate({ agentId: agent.id, payload })
+            }
+            busy={
+              mutations.deploy.isPending ||
+              mutations.unpublish.isPending ||
+              mutations.regeneratePublicKey.isPending ||
+              mutations.updateDeploymentAccess.isPending
+            }
           />
         ))}
 
@@ -74,6 +91,8 @@ function DeploymentCard({
   onCopy,
   onDeploy,
   onUnpublish,
+  onRegenerateKey,
+  onUpdateDeployment,
   busy,
 }: {
   agent: Agent;
@@ -82,6 +101,10 @@ function DeploymentCard({
   onCopy: (value: string, label: string) => void;
   onDeploy: () => void;
   onUnpublish: () => void;
+  onRegenerateKey: () => void;
+  onUpdateDeployment: (
+    payload: Partial<Pick<Agent, "sdkEnabled" | "apiEnabled" | "deploymentMode">>,
+  ) => void;
   busy: boolean;
 }) {
   const isDeployed = agent.deploymentStatus === "deployed" && agent.visibility === "public";
@@ -102,6 +125,14 @@ import { ChatBot } from "@nexus-ai/react-sdk";
     "publicKey": "${agent.publicKey ?? "pk_test_xxxxx"}",
     "message": "What is PPO policy?"
   }'`;
+  const headlessSnippet = `import { createNexusClient } from "@nexus-ai/react-sdk";
+
+const nexus = createNexusClient({
+  botId: "${agent.id}",
+  publicKey: "${agent.publicKey ?? "pk_test_xxxxx"}"
+});
+
+const response = await nexus.chat("What is PPO policy?");`;
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 elevated">
@@ -117,7 +148,9 @@ import { ChatBot } from "@nexus-ai/react-sdk";
               {agent.deploymentMode}
             </span>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{agent.description || "No description"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {agent.description || "No description"}
+          </p>
         </div>
         <div className="flex gap-2">
           {isDeployed ? (
@@ -163,7 +196,64 @@ import { ChatBot } from "@nexus-ai/react-sdk";
           value={agent.publicKey ?? "Deploy to generate pk_test key"}
           disabled={!agent.publicKey}
           onCopy={() => agent.publicKey && onCopy(agent.publicKey, "Public key")}
+          action={
+            <button
+              type="button"
+              onClick={onRegenerateKey}
+              disabled={busy || !isDeployed}
+              className="rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-40"
+              title="Regenerate public key"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          }
         />
+      </div>
+
+      <div className="mt-4 grid gap-3 rounded-lg border border-border bg-surface-1 p-3 md:grid-cols-3">
+        <label className="grid gap-1 text-sm">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Deployment mode
+          </span>
+          <select
+            value={agent.deploymentMode}
+            disabled={busy}
+            onChange={(event) =>
+              onUpdateDeployment({ deploymentMode: event.target.value as Agent["deploymentMode"] })
+            }
+            className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+          >
+            <option value="fullscreen">Full screen assistant</option>
+            <option value="widget">Floating widget</option>
+            <option value="embedded">Embedded component</option>
+          </select>
+        </label>
+        <label className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm">
+          <span>
+            <span className="block font-medium">React SDK</span>
+            <span className="text-xs text-muted-foreground">Allow package integrations</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={agent.sdkEnabled}
+            disabled={busy || !isDeployed}
+            onChange={(event) => onUpdateDeployment({ sdkEnabled: event.target.checked })}
+            className="h-4 w-4"
+          />
+        </label>
+        <label className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm">
+          <span>
+            <span className="block font-medium">Headless API</span>
+            <span className="text-xs text-muted-foreground">Allow public API requests</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={agent.apiEnabled}
+            disabled={busy || !isDeployed}
+            onChange={(event) => onUpdateDeployment({ apiEnabled: event.target.checked })}
+            className="h-4 w-4"
+          />
+        </label>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
@@ -178,6 +268,12 @@ import { ChatBot } from "@nexus-ai/react-sdk";
           title="Headless API"
           code={apiSnippet}
           onCopy={() => onCopy(apiSnippet, "API snippet")}
+        />
+        <CodeBlock
+          icon={TerminalSquare}
+          title="Headless SDK"
+          code={headlessSnippet}
+          onCopy={() => onCopy(headlessSnippet, "Headless SDK snippet")}
         />
       </div>
     </section>

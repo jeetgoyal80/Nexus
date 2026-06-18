@@ -1,6 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Database, ExternalLink, FileText, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
+import {
+  CheckCircle2,
+  Database,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -26,6 +36,7 @@ const pipelineStages = [
 ];
 
 export function KnowledgePage() {
+  const [isDragging, setIsDragging] = useState(false);
   const agents = useAgents();
   const [selectedBotId, setSelectedBotId] = useState<string>();
   const botId = selectedBotId ?? agents.data?.[0]?.id;

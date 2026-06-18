@@ -40,7 +40,8 @@ export const defaultAppearanceConfig: AppearanceConfig = {
   headerTextColor: "#202123",
   welcomeTitle: "How can I help?",
   welcomeMessage: "Hi! How can I help you today?",
-  greetingDescription: "Ask a question and I will respond using the configured runtime and knowledge.",
+  greetingDescription:
+    "Ask a question and I will respond using the configured runtime and knowledge.",
   starterPrompts: ["What can you help with?", "Summarize the policy", "Show key details"],
   borderRadius: 18,
   windowShadow: "premium",
@@ -226,9 +227,7 @@ const luminance = (hex: string) => {
   const { r, g, b } = hexToRgb(hex);
   const values = [r, g, b].map((channel) => {
     const normalized = channel / 255;
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
   });
   return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2];
 };
@@ -272,7 +271,10 @@ export const resolveSmartAppearanceConfig = (
     theme: preset.id,
   };
 
-  const backgroundColor = normalizeHex(base.backgroundColor, defaultAppearanceConfig.backgroundColor);
+  const backgroundColor = normalizeHex(
+    base.backgroundColor,
+    defaultAppearanceConfig.backgroundColor,
+  );
   const primaryColor = normalizeHex(base.primaryColor, defaultAppearanceConfig.primaryColor);
   const dark = isDarkSurface(backgroundColor);
   const panelColor = normalizeHex(
@@ -303,15 +305,27 @@ export const resolveSmartAppearanceConfig = (
     dark ? mix(primaryColor, "#FFFFFF", 0.2) : mix(primaryColor, "#000000", 0.12),
   );
   const widgetConfig = {
-    position: base.widgetConfig?.position ?? base.widgetPosition ?? defaultAppearanceConfig.widgetConfig.position,
+    position:
+      base.widgetConfig?.position ??
+      base.widgetPosition ??
+      defaultAppearanceConfig.widgetConfig.position,
     size: base.widgetConfig?.size ?? base.widgetSize ?? defaultAppearanceConfig.widgetConfig.size,
     icon: base.widgetConfig?.icon ?? base.widgetIcon ?? defaultAppearanceConfig.widgetConfig.icon,
     color: normalizeHex(base.widgetConfig?.color ?? base.widgetColor, primaryColor),
   };
   const embeddedConfig = {
-    width: Math.min(960, Math.max(320, base.embeddedConfig?.width ?? defaultAppearanceConfig.embeddedConfig.width)),
-    height: Math.min(900, Math.max(420, base.embeddedConfig?.height ?? defaultAppearanceConfig.embeddedConfig.height)),
-    layout: base.embeddedConfig?.layout ?? base.layoutType ?? defaultAppearanceConfig.embeddedConfig.layout,
+    width: Math.min(
+      960,
+      Math.max(320, base.embeddedConfig?.width ?? defaultAppearanceConfig.embeddedConfig.width),
+    ),
+    height: Math.min(
+      900,
+      Math.max(420, base.embeddedConfig?.height ?? defaultAppearanceConfig.embeddedConfig.height),
+    ),
+    layout:
+      base.embeddedConfig?.layout ??
+      base.layoutType ??
+      defaultAppearanceConfig.embeddedConfig.layout,
   };
 
   return {
@@ -356,14 +370,12 @@ export const resolveSmartAppearanceConfig = (
 
 export const mergeAppearanceConfig = resolveSmartAppearanceConfig;
 
-export const applyThemePreset = (
-  current: AppearanceConfig,
-  presetId: string,
-): AppearanceConfig => resolveSmartAppearanceConfig({
-  ...current,
-  ...(getThemePreset(presetId).config ?? {}),
-  theme: presetId,
-});
+export const applyThemePreset = (current: AppearanceConfig, presetId: string): AppearanceConfig =>
+  resolveSmartAppearanceConfig({
+    ...current,
+    ...(getThemePreset(presetId).config ?? {}),
+    theme: presetId,
+  });
 
 export const updatePrimaryColor = (
   current: AppearanceConfig,

@@ -182,11 +182,17 @@ const botSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    deployedAt: {
+      type: Date,
+      default: null,
+    },
     analytics: {
       messages: { type: Number, default: 0 },
       conversations: { type: Number, default: 0 },
       visitors: { type: Number, default: 0 },
       sdkRequests: { type: Number, default: 0 },
+      apiRequests: { type: Number, default: 0 },
+      widgetRequests: { type: Number, default: 0 },
       lastUsedAt: { type: Date, default: null },
     },
     appearanceConfig: {
@@ -225,6 +231,7 @@ botSchema.methods.toClientObject = function toClientObject() {
     publicKey: this.publicKey,
     sdkEnabled: this.sdkEnabled,
     apiEnabled: this.apiEnabled,
+    deployedAt: this.deployedAt,
     analytics: this.analytics,
     appearanceConfig: {
       ...DEFAULT_APPEARANCE_CONFIG,

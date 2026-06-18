@@ -205,6 +205,17 @@
   .elevated {
     box-shadow: var(--shadow-elevated);
   }
+  .premium-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+      rgba(15, 23, 42, 0.58);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.05) inset,
+      0 30px 90px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(20px);
+    border-radius: 1.5rem;
+  }
   .scrollbar-thin::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -213,4 +224,56 @@
     background: color-mix(in oklab, var(--foreground) 12%, transparent);
     border-radius: 8px;
   }
+}
+@keyframes floatSlow {
+  0% {
+    transform: translate(0px, 0px);
+  }
+
+  50% {
+    transform: translate(40px, -40px);
+  }
+
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+@keyframes floatReverse {
+  0% {
+    transform: translate(0px, 0px);
+  }
+
+  50% {
+    transform: translate(-50px, 30px);
+  }
+
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+@keyframes pulseSlow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 18s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 22s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 12s ease-in-out infinite;
 }

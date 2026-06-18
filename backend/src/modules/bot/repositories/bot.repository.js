@@ -59,6 +59,14 @@ export const botRepository = {
     );
   },
 
+  findByPublicSlug(publicSlug) {
+    return Bot.findOne({
+      publicSlug,
+      visibility: "public",
+      deploymentStatus: "deployed",
+    });
+  },
+
   deleteBotByIdAndOwner(botId, ownerId) {
     return Bot.findOneAndDelete({ _id: botId, ownerId });
   },

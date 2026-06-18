@@ -48,6 +48,26 @@ export const botController = {
       .json(new ApiResponse(HTTP_STATUS.OK, "Bot deployed successfully", { bot }));
   }),
 
+  regeneratePublicKey: asyncHandler(async (req, res) => {
+    const bot = await botService.regeneratePublicKey(req.user.id, req.validated.params.id);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Public key regenerated successfully", { bot }));
+  }),
+
+  updateDeploymentAccess: asyncHandler(async (req, res) => {
+    const bot = await botService.updateDeploymentAccess(
+      req.user.id,
+      req.validated.params.id,
+      req.validated.body,
+    );
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Deployment access updated successfully", { bot }));
+  }),
+
   unpublishBot: asyncHandler(async (req, res) => {
     const bot = await botService.unpublishBot(req.user.id, req.validated.params.id);
 

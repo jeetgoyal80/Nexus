@@ -58,12 +58,16 @@ function MarkdownMessage({
           <h1 className="mb-3 mt-1 text-2xl font-semibold tracking-[-0.02em]">{children}</h1>
         ),
         h2: ({ children }) => (
-          <h2 className="mb-2.5 mt-5 text-xl font-semibold tracking-[-0.015em] first:mt-0">{children}</h2>
+          <h2 className="mb-2.5 mt-5 text-xl font-semibold tracking-[-0.015em] first:mt-0">
+            {children}
+          </h2>
         ),
         h3: ({ children }) => (
           <h3 className="mb-2 mt-4 text-base font-semibold first:mt-0">{children}</h3>
         ),
-        p: ({ children }) => <p className="my-2 leading-relaxed first:mt-0 last:mb-0">{children}</p>,
+        p: ({ children }) => (
+          <p className="my-2 leading-relaxed first:mt-0 last:mb-0">{children}</p>
+        ),
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         em: ({ children }) => <em className="italic opacity-95">{children}</em>,
         ul: ({ children }) => <ul className="my-3 list-disc space-y-1.5 pl-5">{children}</ul>,
@@ -114,13 +118,21 @@ function MarkdownMessage({
           </pre>
         ),
         table: ({ children }) => (
-          <div className="my-4 overflow-x-auto rounded-xl border" style={{ borderColor: config.borderColor }}>
+          <div
+            className="my-4 overflow-x-auto rounded-xl border"
+            style={{ borderColor: config.borderColor }}
+          >
             <table className="w-full border-collapse text-sm">{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead style={{ background: config.secondaryColor }}>{children}</thead>,
+        thead: ({ children }) => (
+          <thead style={{ background: config.secondaryColor }}>{children}</thead>
+        ),
         th: ({ children }) => (
-          <th className="border-b px-3 py-2 text-left font-semibold" style={{ borderColor: config.borderColor }}>
+          <th
+            className="border-b px-3 py-2 text-left font-semibold"
+            style={{ borderColor: config.borderColor }}
+          >
             {children}
           </th>
         ),
@@ -129,7 +141,9 @@ function MarkdownMessage({
             {children}
           </td>
         ),
-        hr: () => <hr className="my-5 border-0 border-t" style={{ borderColor: config.borderColor }} />,
+        hr: () => (
+          <hr className="my-5 border-0 border-t" style={{ borderColor: config.borderColor }} />
+        ),
       }}
     >
       {content}
@@ -160,18 +174,17 @@ export function ChatAppearancePreview({
 }) {
   const config = mergeAppearanceConfig(appearanceConfig);
   const headerTitle = config.headerTitle || botName;
-  const previewMessages =
-    messages?.length
-      ? messages
-      : [
-          { role: "assistant" as const, content: config.welcomeMessage },
-          { role: "user" as const, content: "Can you help me understand the policy?" },
-          {
-            role: "assistant" as const,
-            content:
-              "**Absolutely.** I can answer using the configured knowledge base and keep the response aligned with this bot's personality.",
-          },
-        ];
+  const previewMessages = messages?.length
+    ? messages
+    : [
+        { role: "assistant" as const, content: config.welcomeMessage },
+        { role: "user" as const, content: "Can you help me understand the policy?" },
+        {
+          role: "assistant" as const,
+          content:
+            "**Absolutely.** I can answer using the configured knowledge base and keep the response aligned with this bot's personality.",
+        },
+      ];
 
   if (variant === "assistant") {
     return (
@@ -240,7 +253,10 @@ export function ChatAppearancePreview({
           {config.showOnlineIndicator && (
             <span
               className="h-2 w-2 rounded-full"
-              style={{ background: config.accentColor, boxShadow: `0 0 14px ${config.accentColor}` }}
+              style={{
+                background: config.accentColor,
+                boxShadow: `0 0 14px ${config.accentColor}`,
+              }}
             />
           )}
           <span className="hidden sm:inline">{config.statusText}</span>
@@ -257,10 +273,16 @@ export function ChatAppearancePreview({
               : `linear-gradient(135deg, ${config.primaryColor}22, transparent)`,
         }}
       >
-        <p className="text-xl font-semibold tracking-[-0.02em]" style={{ color: config.headerTextColor }}>
+        <p
+          className="text-xl font-semibold tracking-[-0.02em]"
+          style={{ color: config.headerTextColor }}
+        >
           {config.welcomeTitle}
         </p>
-        <p className="mt-1.5 max-w-[46rem] text-sm leading-relaxed" style={{ color: config.botTextColor, opacity: 0.76 }}>
+        <p
+          className="mt-1.5 max-w-[46rem] text-sm leading-relaxed"
+          style={{ color: config.botTextColor, opacity: 0.76 }}
+        >
           {config.greetingDescription}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -283,7 +305,10 @@ export function ChatAppearancePreview({
       </div>
 
       <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-6">
-        <div className="mx-auto flex w-full max-w-3xl flex-col" style={{ gap: config.messageSpacing }}>
+        <div
+          className="mx-auto flex w-full max-w-3xl flex-col"
+          style={{ gap: config.messageSpacing }}
+        >
           {previewMessages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
@@ -300,9 +325,11 @@ export function ChatAppearancePreview({
               <div
                 className="max-w-[70%] shadow-sm"
                 style={{
-                  background: message.role === "user" ? config.userBubbleColor : config.botBubbleColor,
+                  background:
+                    message.role === "user" ? config.userBubbleColor : config.botBubbleColor,
                   color: message.role === "user" ? config.userTextColor : config.botTextColor,
-                  borderRadius: message.role === "user" ? config.userBubbleRadius : config.botBubbleRadius,
+                  borderRadius:
+                    message.role === "user" ? config.userBubbleRadius : config.botBubbleRadius,
                   border:
                     message.role === "assistant"
                       ? `${config.borderThickness}px solid ${config.borderColor}`
@@ -395,7 +422,10 @@ function FullScreenAssistant({
           {config.showOnlineIndicator && (
             <span
               className="h-2 w-2 rounded-full"
-              style={{ background: config.accentColor, boxShadow: `0 0 14px ${config.accentColor}` }}
+              style={{
+                background: config.accentColor,
+                boxShadow: `0 0 14px ${config.accentColor}`,
+              }}
             />
           )}
           <span className="hidden sm:inline">{config.statusText}</span>
@@ -459,7 +489,11 @@ function FullScreenAssistant({
                   </div>
                 )}
                 <div
-                  className={message.role === "user" ? "max-w-[70%] rounded-3xl px-4 py-2.5" : "max-w-[78%] py-1"}
+                  className={
+                    message.role === "user"
+                      ? "max-w-[70%] rounded-3xl px-4 py-2.5"
+                      : "max-w-[78%] py-1"
+                  }
                   style={{
                     background: message.role === "user" ? config.userBubbleColor : "transparent",
                     color: message.role === "user" ? config.userTextColor : config.botTextColor,
@@ -513,7 +547,8 @@ function ChatInput({
       <div
         className="mx-auto flex min-h-12 max-w-3xl items-center gap-2 border px-3 py-1 shadow-sm transition focus-within:shadow-md"
         style={{
-          background: config.inputStyle === "filled" ? config.secondaryColor : `${config.secondaryColor}66`,
+          background:
+            config.inputStyle === "filled" ? config.secondaryColor : `${config.secondaryColor}66`,
           borderColor: config.inputStyle === "soft" ? "transparent" : config.borderColor,
           borderRadius: fullscreen ? 28 : Math.max(16, config.borderRadius),
         }}
@@ -535,16 +570,21 @@ function ChatInput({
           disabled={!interactive || disabled}
           className="grid h-9 w-9 shrink-0 place-items-center transition hover:scale-[1.03] disabled:opacity-50"
           style={{
-            background: config.sendButtonStyle === "minimal" ? "transparent" : config.sendButtonColor,
+            background:
+              config.sendButtonStyle === "minimal" ? "transparent" : config.sendButtonColor,
             borderRadius: config.sendButtonStyle === "soft" ? 12 : 999,
-            color: config.sendButtonStyle === "minimal" ? config.sendButtonColor : config.userTextColor,
+            color:
+              config.sendButtonStyle === "minimal" ? config.sendButtonColor : config.userTextColor,
           }}
         >
           <Send className="h-4 w-4" />
         </button>
       </div>
       {config.showPoweredBy && (
-        <p className="pt-2 text-center text-[10px]" style={{ color: config.botTextColor, opacity: 0.52 }}>
+        <p
+          className="pt-2 text-center text-[10px]"
+          style={{ color: config.botTextColor, opacity: 0.52 }}
+        >
           Powered by {config.companyName || "Platform"}
         </p>
       )}

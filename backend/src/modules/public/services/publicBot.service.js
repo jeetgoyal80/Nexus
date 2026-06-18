@@ -8,6 +8,7 @@ import { promptBuilderService } from "../../chat/services/promptBuilder.service.
 import { llmOrchestratorService } from "../../chat/services/llmOrchestrator.service.js";
 import { outputFormatterService } from "../../chat/services/outputFormatter.service.js";
 import { ragClientService } from "../../rag/services/ragClient.service.js";
+import { analyticsService } from "../../analytics/services/analytics.service.js";
 
 const assertValidBotId = (botId) => {
   if (!mongoose.Types.ObjectId.isValid(botId)) {
@@ -53,7 +54,15 @@ export const publicBotService = {
     };
   },
 
-  async executePublicChat({ botId, publicKey, message, conversationId, sessionId }) {
+  async executePublicChat({
+    botId,
+    publicKey,
+    message,
+    conversationId,
+    sessionId,
+    channel = "public_api",
+    requestMeta = {},
+  }) {
     assertValidBotId(botId);
 
     if (conversationId && !mongoose.Types.ObjectId.isValid(conversationId)) {
@@ -123,8 +132,21 @@ export const publicBotService = {
 
     await botRepository.incrementAnalytics(botId, {
       messages: 1,
-      sdkRequests: 1,
+      sdkRequests: channel === "react_sdk" ? 1 : 0,
+      widgetRequests: channel === "widget" ? 1 : 0,
+      apiRequests: channel === "public_api" || channel === "public_page" ? 1 : 0,
       conversations: conversationId ? 0 : 1,
+    });
+
+    await analyticsService.trackRuntimeEvents({
+      botId,
+      conversationId: updatedConversation._id,
+      publicKey,
+      sessionId: updatedConversation.sessionId,
+      channel,
+      ip: requestMeta.ip,
+      userAgent: requestMeta.userAgent,
+      isNewConversation: !conversationId,
     });
 
     return {

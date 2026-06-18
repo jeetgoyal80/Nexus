@@ -42,6 +42,19 @@ const sanitizeUpdatePayload = (payload) => {
   }, {});
 };
 
+const generatePublicKey = () => `pk_test_${crypto.randomBytes(24).toString("hex")}`;
+
+const generatePublicSlug = (bot) => {
+  const base =
+    bot.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) || "bot";
+
+  return `${base}-${bot._id.toString().slice(-8)}`;
+};
+
 export const botService = {
   async createBot(ownerId, payload) {
     const bot = await botRepository.createBot({
@@ -91,8 +104,8 @@ export const botService = {
       throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");
     }
 
-    const publicKey = bot.publicKey || `pk_test_${crypto.randomBytes(18).toString("hex")}`;
-    const publicSlug = bot.publicSlug || `${bot.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${bot._id.toString().slice(-6)}`;
+    const publicKey = bot.publicKey || generatePublicKey();
+    const publicSlug = bot.publicSlug || generatePublicSlug(bot);
 
     const deployedBot = await botRepository.updateBotByIdAndOwner(botId, ownerId, {
       visibility: BOT_VISIBILITY.PUBLIC,
@@ -101,9 +114,51 @@ export const botService = {
       publicSlug,
       sdkEnabled: true,
       apiEnabled: true,
+      deployedAt: new Date(),
     });
 
     return deployedBot.toClientObject();
+  },
+
+  async regeneratePublicKey(ownerId, botId) {
+    assertValidObjectId(botId, "Bot");
+
+    const bot = await botRepository.updateBotByIdAndOwner(botId, ownerId, {
+      publicKey: generatePublicKey(),
+    });
+
+    if (!bot) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");
+    }
+
+    return bot.toClientObject();
+  },
+
+  async updateDeploymentAccess(ownerId, botId, payload) {
+    assertValidObjectId(botId, "Bot");
+
+    const updatePayload = {};
+
+    if (payload.sdkEnabled !== undefined) {
+      updatePayload.sdkEnabled = payload.sdkEnabled;
+    }
+
+    if (payload.apiEnabled !== undefined) {
+      updatePayload.apiEnabled = payload.apiEnabled;
+    }
+
+    if (payload.deploymentMode !== undefined) {
+      updatePayload.deploymentMode = payload.deploymentMode;
+      updatePayload["appearanceConfig.deploymentMode"] = payload.deploymentMode;
+    }
+
+    const bot = await botRepository.updateBotByIdAndOwner(botId, ownerId, updatePayload);
+
+    if (!bot) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");
+    }
+
+    return bot.toClientObject();
   },
 
   async unpublishBot(ownerId, botId) {
@@ -114,6 +169,7 @@ export const botService = {
       deploymentStatus: BOT_DEPLOYMENT_STATUS.DRAFT,
       sdkEnabled: false,
       apiEnabled: false,
+      deployedAt: null,
     });
 
     if (!bot) {

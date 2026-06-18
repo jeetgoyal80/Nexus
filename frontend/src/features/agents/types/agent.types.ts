@@ -26,11 +26,14 @@ export type Agent = {
   publicKey?: string;
   sdkEnabled: boolean;
   apiEnabled: boolean;
+  deployedAt?: string | null;
   analytics?: {
     messages: number;
     conversations: number;
     visitors: number;
     sdkRequests: number;
+    apiRequests?: number;
+    widgetRequests?: number;
     lastUsedAt?: string | null;
   };
   appearanceConfig: AppearanceConfig;

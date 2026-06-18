@@ -21,7 +21,13 @@ export const publicBotController = {
   }),
 
   executePublicChat: asyncHandler(async (req, res) => {
-    const result = await publicBotService.executePublicChat(req.validated.body);
+    const result = await publicBotService.executePublicChat({
+      ...req.validated.body,
+      requestMeta: {
+        ip: req.ip,
+        userAgent: req.get("user-agent"),
+      },
+    });
 
     return res
       .status(HTTP_STATUS.OK)

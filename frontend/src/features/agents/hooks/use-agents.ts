@@ -6,7 +6,12 @@ import { getAgent } from "../api/get-agent";
 import { createAgent } from "../api/create-agent";
 import { updateAgent } from "../api/update-agent";
 import { deleteAgent } from "../api/delete-agent";
-import { deployAgent, unpublishAgent } from "../api/deploy-agent";
+import {
+  deployAgent,
+  regenerateAgentPublicKey,
+  unpublishAgent,
+  updateAgentDeploymentAccess,
+} from "../api/deploy-agent";
 
 export const agentKeys = {
   all: ["agents"] as const,
@@ -71,6 +76,24 @@ export function useAgentMutations() {
         toast.success(`${bot.name} unpublished`);
       },
       onError: (error) => toast.error(getApiErrorMessage(error, "Unpublish failed")),
+    }),
+    regeneratePublicKey: useMutation({
+      mutationFn: regenerateAgentPublicKey,
+      onSuccess: ({ bot }) => {
+        queryClient.invalidateQueries({ queryKey: agentKeys.all });
+        queryClient.setQueryData(agentKeys.detail(bot.id), bot);
+        toast.success("Public key regenerated");
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error, "Key regeneration failed")),
+    }),
+    updateDeploymentAccess: useMutation({
+      mutationFn: updateAgentDeploymentAccess,
+      onSuccess: ({ bot }) => {
+        queryClient.invalidateQueries({ queryKey: agentKeys.all });
+        queryClient.setQueryData(agentKeys.detail(bot.id), bot);
+        toast.success("Deployment settings updated");
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error, "Deployment update failed")),
     }),
   };
 }

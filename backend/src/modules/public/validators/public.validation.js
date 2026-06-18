@@ -21,6 +21,7 @@ export const publicChatSchema = z.object({
       (value) => (value === null || value === "" ? undefined : value),
       z.string().trim().max(120).optional(),
     ),
+    channel: z.enum(["public_api", "react_sdk", "widget", "public_page"]).optional(),
   }),
 });
 

@@ -149,6 +149,21 @@ export const botIdParamSchema = z.object({
   }),
 });
 
+export const deploymentAccessSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, "Bot id is required"),
+  }),
+  body: z
+    .object({
+      sdkEnabled: z.boolean().optional(),
+      apiEnabled: z.boolean().optional(),
+      deploymentMode: z.enum(Object.values(BOT_DEPLOYMENT_MODE)).optional(),
+    })
+    .refine((payload) => Object.keys(payload).length > 0, {
+      message: "At least one deployment setting is required",
+    }),
+});
+
 export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse({
     body: req.body,

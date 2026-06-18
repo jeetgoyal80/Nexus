@@ -4,6 +4,7 @@ import { authenticate } from "../../auth/middleware/auth.middleware.js";
 import {
   botIdParamSchema,
   createBotSchema,
+  deploymentAccessSchema,
   updateBotSchema,
   validate,
 } from "../validators/bot.validation.js";
@@ -18,6 +19,8 @@ router.get("/:id", validate(botIdParamSchema), botController.getBotById);
 router.put("/:id", validate(updateBotSchema), botController.updateBot);
 router.post("/:id/deploy", validate(botIdParamSchema), botController.deployBot);
 router.post("/:id/unpublish", validate(botIdParamSchema), botController.unpublishBot);
+router.post("/:id/regenerate-public-key", validate(botIdParamSchema), botController.regeneratePublicKey);
+router.patch("/:id/deployment-access", validate(deploymentAccessSchema), botController.updateDeploymentAccess);
 router.delete("/:id", validate(botIdParamSchema), botController.deleteBot);
 
 export default router;

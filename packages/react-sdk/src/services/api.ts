@@ -1,4 +1,4 @@
-import type { BotConfig, PublicChatResponse } from "../types";
+import type { BotConfig, ChatBotMode, PublicChatResponse } from "../types";
 
 export const DEFAULT_API_BASE_URL = "http://localhost:5000/api";
 
@@ -36,6 +36,7 @@ export const sendPublicMessage = ({
   message,
   conversationId,
   sessionId,
+  channel,
 }: {
   apiBaseUrl: string;
   botId: string;
@@ -43,6 +44,7 @@ export const sendPublicMessage = ({
   message: string;
   conversationId?: string;
   sessionId?: string;
+  channel?: "public_api" | "react_sdk" | "widget";
 }) =>
   request<PublicChatResponse>(`${apiBaseUrl}/public/chat`, {
     method: "POST",
@@ -52,5 +54,28 @@ export const sendPublicMessage = ({
       message,
       conversationId,
       sessionId,
+      channel,
     }),
   });
+
+export const createNexusClient = ({
+  botId,
+  publicKey,
+  apiBaseUrl = DEFAULT_API_BASE_URL,
+}: {
+  botId: string;
+  publicKey: string;
+  apiBaseUrl?: string;
+}) => ({
+  getConfig: () => fetchBotConfig({ apiBaseUrl, botId }),
+  chat: (message: string, options?: { conversationId?: string; sessionId?: string; mode?: ChatBotMode }) =>
+    sendPublicMessage({
+      apiBaseUrl,
+      botId,
+      publicKey,
+      message,
+      conversationId: options?.conversationId,
+      sessionId: options?.sessionId,
+      channel: options?.mode === "widget" ? "widget" : "react_sdk",
+    }),
+});

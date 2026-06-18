@@ -113,7 +113,8 @@ export function AgentBuilderPage({ agentId }: { agentId: string }) {
 
   const readyDocs = docs.data?.filter((doc) => doc.status === "embedded").length ?? 0;
   const processingDocs =
-    docs.data?.filter((doc) => doc.status === "uploaded" || doc.status === "processing").length ?? 0;
+    docs.data?.filter((doc) => doc.status === "uploaded" || doc.status === "processing").length ??
+    0;
 
   const save = () => {
     const deploymentMode =
@@ -218,11 +219,17 @@ function ConfigPanel({
   setDraft: React.Dispatch<React.SetStateAction<BuilderDraft>>;
 }) {
   return (
-    <PanelShell icon={Sliders} title={`${activeTab[0].toUpperCase()}${activeTab.slice(1)} settings`}>
+    <PanelShell
+      icon={Sliders}
+      title={`${activeTab[0].toUpperCase()}${activeTab.slice(1)} settings`}
+    >
       {activeTab === "general" && (
         <>
           <Field label="Bot name">
-            <Input value={draft.name} onChange={(event) => setDraftValue(setDraft, "name", event.target.value)} />
+            <Input
+              value={draft.name}
+              onChange={(event) => setDraftValue(setDraft, "name", event.target.value)}
+            />
           </Field>
           <Field label="Description">
             <Textarea
@@ -240,7 +247,10 @@ function ConfigPanel({
       {activeTab === "personality" && (
         <>
           <Field label="Role">
-            <Input value={draft.role} onChange={(event) => setDraftValue(setDraft, "role", event.target.value)} />
+            <Input
+              value={draft.role}
+              onChange={(event) => setDraftValue(setDraft, "role", event.target.value)}
+            />
           </Field>
           <Field label="Tone">
             <select
@@ -264,7 +274,9 @@ function ConfigPanel({
             <Segmented
               value={draft.outputFormat}
               values={["paragraph", "bullet_points", "structured_json"]}
-              onChange={(value) => setDraftValue(setDraft, "outputFormat", value as AgentOutputFormat)}
+              onChange={(value) =>
+                setDraftValue(setDraft, "outputFormat", value as AgentOutputFormat)
+              }
             />
           </Field>
         </>
@@ -289,21 +301,24 @@ function ConfigPanel({
       {activeTab === "runtime" && (
         <>
           <Field label="Runtime identity">
-            <Input value={draft.name} onChange={(event) => setDraftValue(setDraft, "name", event.target.value)} />
+            <Input
+              value={draft.name}
+              onChange={(event) => setDraftValue(setDraft, "name", event.target.value)}
+            />
           </Field>
           <Field label="Output format">
             <Segmented
               value={draft.outputFormat}
               values={["paragraph", "bullet_points", "structured_json"]}
-              onChange={(value) => setDraftValue(setDraft, "outputFormat", value as AgentOutputFormat)}
+              onChange={(value) =>
+                setDraftValue(setDraft, "outputFormat", value as AgentOutputFormat)
+              }
             />
           </Field>
         </>
       )}
 
-      {activeTab === "deployment" && (
-        <DeploymentControls draft={draft} setDraft={setDraft} />
-      )}
+      {activeTab === "deployment" && <DeploymentControls draft={draft} setDraft={setDraft} />}
     </PanelShell>
   );
 }
@@ -333,7 +348,8 @@ function DeploymentControls({
 
       {mode === "fullscreen" && (
         <div className="rounded-lg border border-border bg-surface-1 p-3 text-sm text-muted-foreground">
-          Full Screen Assistant uses the whole public bot page, so launcher position and widget size are hidden.
+          Full Screen Assistant uses the whole public bot page, so launcher position and widget size
+          are hidden.
         </div>
       )}
 
@@ -467,13 +483,17 @@ function AppearanceControls({
             >
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex gap-1">
-                {[
-                  preset.config.primaryColor ?? defaultAppearanceConfig.primaryColor,
-                  preset.config.backgroundColor ?? defaultAppearanceConfig.backgroundColor,
-                  preset.config.secondaryColor ?? defaultAppearanceConfig.secondaryColor,
-                ].map((color) => (
-                  <span key={color} className="h-4 w-4 rounded-full" style={{ background: color }} />
-                ))}
+                  {[
+                    preset.config.primaryColor ?? defaultAppearanceConfig.primaryColor,
+                    preset.config.backgroundColor ?? defaultAppearanceConfig.backgroundColor,
+                    preset.config.secondaryColor ?? defaultAppearanceConfig.secondaryColor,
+                  ].map((color) => (
+                    <span
+                      key={color}
+                      className="h-4 w-4 rounded-full"
+                      style={{ background: color }}
+                    />
+                  ))}
                 </div>
                 <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
                   {preset.surface}
@@ -494,7 +514,8 @@ function AppearanceControls({
       <div className="rounded-lg border border-border bg-surface-1 p-3">
         <Label>Brand color</Label>
         <p className="mt-1 text-xs text-muted-foreground">
-          The theme engine derives readable text, borders, hover states, bubbles, and accents from this.
+          The theme engine derives readable text, borders, hover states, bubbles, and accents from
+          this.
         </p>
         <div className="mt-3">
           <ColorControl
@@ -513,7 +534,8 @@ function AppearanceControls({
       <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-3">
         <p className="text-xs font-medium text-emerald-200">Theme safety active</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Contrast, message surfaces, borders, spacing, and radius values are normalized before preview, save, and public runtime rendering.
+          Contrast, message surfaces, borders, spacing, and radius values are normalized before
+          preview, save, and public runtime rendering.
         </p>
       </div>
 
@@ -521,7 +543,11 @@ function AppearanceControls({
         <Label>Theme comparison</Label>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {comparisonThemes.map((theme) => {
-            const preview = mergeAppearanceConfig({ ...draft.appearanceConfig, ...theme.config, theme: theme.id });
+            const preview = mergeAppearanceConfig({
+              ...draft.appearanceConfig,
+              ...theme.config,
+              theme: theme.id,
+            });
             return (
               <button
                 key={theme.id}
@@ -535,9 +561,18 @@ function AppearanceControls({
                 className="overflow-hidden rounded-lg border border-border bg-surface-1 text-left shadow-sm transition hover:border-primary/60"
               >
                 <div className="h-16 p-2" style={{ background: preview.backgroundColor }}>
-                  <div className="mb-2 h-2 w-12 rounded-full" style={{ background: preview.borderColor }} />
-                  <div className="ml-auto h-4 w-14 rounded-full" style={{ background: preview.userBubbleColor }} />
-                  <div className="mt-1 h-4 w-16 rounded-full" style={{ background: preview.botBubbleColor }} />
+                  <div
+                    className="mb-2 h-2 w-12 rounded-full"
+                    style={{ background: preview.borderColor }}
+                  />
+                  <div
+                    className="ml-auto h-4 w-14 rounded-full"
+                    style={{ background: preview.userBubbleColor }}
+                  />
+                  <div
+                    className="mt-1 h-4 w-16 rounded-full"
+                    style={{ background: preview.botBubbleColor }}
+                  />
                 </div>
                 <div className="px-2 py-1.5">
                   <p className="truncate text-[11px] font-medium">{theme.name}</p>
@@ -552,7 +587,9 @@ function AppearanceControls({
         <select
           value={draft.appearanceConfig.fontFamily}
           onChange={(event) =>
-            updateAppearance(setDraft, { fontFamily: event.target.value as AppearanceConfig["fontFamily"] })
+            updateAppearance(setDraft, {
+              fontFamily: event.target.value as AppearanceConfig["fontFamily"],
+            })
           }
           className="h-10 w-full rounded-md border border-border bg-input px-3 text-sm"
         >
@@ -561,9 +598,28 @@ function AppearanceControls({
           ))}
         </select>
       </Field>
-      <RangeControl label="Font size" min={12} max={20} value={draft.appearanceConfig.fontSize} onChange={(fontSize) => updateAppearance(setDraft, { fontSize })} />
-      <RangeControl label="Message spacing" min={6} max={28} value={draft.appearanceConfig.messageSpacing} onChange={(messageSpacing) => updateAppearance(setDraft, { messageSpacing })} />
-      <RangeControl label="Line height" min={1.2} max={2} step={0.1} value={draft.appearanceConfig.lineHeight} onChange={(lineHeight) => updateAppearance(setDraft, { lineHeight })} />
+      <RangeControl
+        label="Font size"
+        min={12}
+        max={20}
+        value={draft.appearanceConfig.fontSize}
+        onChange={(fontSize) => updateAppearance(setDraft, { fontSize })}
+      />
+      <RangeControl
+        label="Message spacing"
+        min={6}
+        max={28}
+        value={draft.appearanceConfig.messageSpacing}
+        onChange={(messageSpacing) => updateAppearance(setDraft, { messageSpacing })}
+      />
+      <RangeControl
+        label="Line height"
+        min={1.2}
+        max={2}
+        step={0.1}
+        value={draft.appearanceConfig.lineHeight}
+        onChange={(lineHeight) => updateAppearance(setDraft, { lineHeight })}
+      />
     </PanelShell>
   );
 }
@@ -612,7 +668,9 @@ function AdvancedAppearanceControls({
         <Segmented
           value={draft.appearanceConfig.avatarShape}
           values={["circle", "rounded", "square"]}
-          onChange={(value) => updateAppearance(setDraft, { avatarShape: value as AppearanceConfig["avatarShape"] })}
+          onChange={(value) =>
+            updateAppearance(setDraft, { avatarShape: value as AppearanceConfig["avatarShape"] })
+          }
         />
       </Field>
       <Field label="Welcome title">
@@ -643,15 +701,41 @@ function AdvancedAppearanceControls({
           }
         />
       </Field>
-      <RangeControl label="Rounded corners" min={0} max={32} value={draft.appearanceConfig.borderRadius} onChange={(borderRadius) => updateAppearance(setDraft, { borderRadius })} />
-      <RangeControl label="Border thickness" min={0} max={4} value={draft.appearanceConfig.borderThickness} onChange={(borderThickness) => updateAppearance(setDraft, { borderThickness })} />
-      <RangeControl label="Bot bubble radius" min={0} max={28} value={draft.appearanceConfig.botBubbleRadius} onChange={(botBubbleRadius) => updateAppearance(setDraft, { botBubbleRadius })} />
-      <RangeControl label="User bubble radius" min={0} max={28} value={draft.appearanceConfig.userBubbleRadius} onChange={(userBubbleRadius) => updateAppearance(setDraft, { userBubbleRadius })} />
+      <RangeControl
+        label="Rounded corners"
+        min={0}
+        max={32}
+        value={draft.appearanceConfig.borderRadius}
+        onChange={(borderRadius) => updateAppearance(setDraft, { borderRadius })}
+      />
+      <RangeControl
+        label="Border thickness"
+        min={0}
+        max={4}
+        value={draft.appearanceConfig.borderThickness}
+        onChange={(borderThickness) => updateAppearance(setDraft, { borderThickness })}
+      />
+      <RangeControl
+        label="Bot bubble radius"
+        min={0}
+        max={28}
+        value={draft.appearanceConfig.botBubbleRadius}
+        onChange={(botBubbleRadius) => updateAppearance(setDraft, { botBubbleRadius })}
+      />
+      <RangeControl
+        label="User bubble radius"
+        min={0}
+        max={28}
+        value={draft.appearanceConfig.userBubbleRadius}
+        onChange={(userBubbleRadius) => updateAppearance(setDraft, { userBubbleRadius })}
+      />
       <Field label="Density">
         <Segmented
           value={draft.appearanceConfig.density}
           values={["compact", "comfortable", "spacious"]}
-          onChange={(value) => updateAppearance(setDraft, { density: value as AppearanceConfig["density"] })}
+          onChange={(value) =>
+            updateAppearance(setDraft, { density: value as AppearanceConfig["density"] })
+          }
         />
       </Field>
       <ToggleRow
@@ -785,7 +869,13 @@ function StyledRuntimePreview({ agentId, draft }: { agentId: string; draft: Buil
   );
 }
 
-function FloatingWidgetPreview({ draft, children }: { draft: BuilderDraft; children: React.ReactNode }) {
+function FloatingWidgetPreview({
+  draft,
+  children,
+}: {
+  draft: BuilderDraft;
+  children: React.ReactNode;
+}) {
   const config = draft.appearanceConfig;
   const sizeMap = {
     small: { width: 360, height: 560, launcher: 48 },
@@ -829,7 +919,13 @@ function FloatingWidgetPreview({ draft, children }: { draft: BuilderDraft; child
   );
 }
 
-function EmbeddedComponentPreview({ draft, children }: { draft: BuilderDraft; children: React.ReactNode }) {
+function EmbeddedComponentPreview({
+  draft,
+  children,
+}: {
+  draft: BuilderDraft;
+  children: React.ReactNode;
+}) {
   const config = draft.appearanceConfig;
 
   return (
@@ -838,7 +934,9 @@ function EmbeddedComponentPreview({ draft, children }: { draft: BuilderDraft; ch
         <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-4 text-slate-900">
           <div>
             <p className="text-sm font-semibold">Example website page</p>
-            <p className="text-xs text-slate-500">Embedded with &lt;ChatBot botId="{draft.name || "abc123"}" /&gt;</p>
+            <p className="text-xs text-slate-500">
+              Embedded with &lt;ChatBot botId="{draft.name || "abc123"}" /&gt;
+            </p>
           </div>
           <div className="h-8 w-24 rounded-full bg-slate-100" />
         </div>
@@ -879,7 +977,10 @@ function RuntimePanel({
   visibility: AgentVisibility;
 }) {
   return (
-    <PanelShell icon={Activity} title={activeTab === "deployment" ? "Deployment status" : "Runtime systems"}>
+    <PanelShell
+      icon={Activity}
+      title={activeTab === "deployment" ? "Deployment status" : "Runtime systems"}
+    >
       <div>
         <Label>Knowledge readiness</Label>
         <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
@@ -979,7 +1080,10 @@ function IconPicker({
   value: AppearanceConfig["avatarIcon"];
   onChange: (value: AppearanceConfig["avatarIcon"]) => void;
 }) {
-  const icons: Array<{ value: AppearanceConfig["avatarIcon"]; icon: React.ComponentType<{ className?: string }> }> = [
+  const icons: Array<{
+    value: AppearanceConfig["avatarIcon"];
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { value: "sparkles", icon: Sparkles },
     { value: "bot", icon: Bot },
     { value: "message-circle", icon: MessageCircle },
@@ -1023,7 +1127,11 @@ function ColorControl({
         onChange={(event) => onChange(event.target.value)}
         className="h-9 w-11 rounded border border-border bg-transparent p-1"
       />
-      <Input value={value} onChange={(event) => onChange(event.target.value)} className="h-9 font-mono text-xs" />
+      <Input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-9 font-mono text-xs"
+      />
     </div>
   );
 }
@@ -1072,7 +1180,10 @@ function Segmented<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="grid gap-1 rounded-md border border-border bg-secondary p-1 text-xs" style={{ gridTemplateColumns: `repeat(${values.length}, minmax(0, 1fr))` }}>
+    <div
+      className="grid gap-1 rounded-md border border-border bg-secondary p-1 text-xs"
+      style={{ gridTemplateColumns: `repeat(${values.length}, minmax(0, 1fr))` }}
+    >
       {values.map((item) => (
         <button
           key={item}
@@ -1103,8 +1214,12 @@ function ToggleRow({
       className="flex w-full items-center justify-between rounded-md border border-border bg-surface-1 px-3 py-2 text-sm"
     >
       <span>{label}</span>
-      <span className={`h-5 w-9 rounded-full p-0.5 transition ${checked ? "bg-primary" : "bg-muted"}`}>
-        <span className={`block h-4 w-4 rounded-full bg-white transition ${checked ? "translate-x-4" : ""}`} />
+      <span
+        className={`h-5 w-9 rounded-full p-0.5 transition ${checked ? "bg-primary" : "bg-muted"}`}
+      >
+        <span
+          className={`block h-4 w-4 rounded-full bg-white transition ${checked ? "translate-x-4" : ""}`}
+        />
       </span>
     </button>
   );
