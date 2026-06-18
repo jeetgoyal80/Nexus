@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/app/store/hooks";
 import { persistor } from "@/app/store/store";
@@ -12,10 +13,18 @@ import { logout } from "../api/logout";
 export function useAuthActions() {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const onSession = (session: Awaited<ReturnType<typeof login>>) => {
     setApiAccessToken(session.accessToken);
     dispatch(sessionStarted(session));
+  };
+
+  const clearClientSession = async () => {
+    setApiAccessToken(null);
+    dispatch(loggedOut());
+    queryClient.clear();
+    await persistor.purge();
   };
 
   return {
@@ -41,11 +50,15 @@ export function useAuthActions() {
     }),
     logout: useMutation({
       mutationFn: logout,
-      onSettled: () => {
-        setApiAccessToken(null);
-        dispatch(loggedOut());
-        persistor.purge();
-        queryClient.clear();
+      onMutate: async () => {
+        await clearClientSession();
+        await navigate({ to: "/login", replace: true });
+      },
+      onSuccess: () => {
+        toast.success("Signed out");
+      },
+      onError: () => {
+        toast.warning("Signed out locally. Server session could not be confirmed.");
       },
     }),
   };

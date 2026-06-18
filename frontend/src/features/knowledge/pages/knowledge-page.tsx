@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DragEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   CheckCircle2,
@@ -35,8 +36,12 @@ const pipelineStages = [
   { label: "Searchable", statuses: ["embedded"] },
 ];
 
+const acceptedFileTypes = ".pdf,.docx,.txt,.csv,.html";
+const acceptedExtensions = new Set(["pdf", "docx", "txt", "csv", "html"]);
+
 export function KnowledgePage() {
   const [isDragging, setIsDragging] = useState(false);
+  const dragDepthRef = useRef(0);
   const agents = useAgents();
   const [selectedBotId, setSelectedBotId] = useState<string>();
   const botId = selectedBotId ?? agents.data?.[0]?.id;
@@ -55,12 +60,71 @@ export function KnowledgePage() {
     };
   }, [docs.data]);
 
-  const onFile = async (file?: File) => {
-    if (!file || !botId) return;
-    setProgress(0);
-    await upload.mutateAsync({ file, onProgress: setProgress });
-    setProgress(0);
+  const isAcceptedFile = (file: File) => {
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    return Boolean(extension && acceptedExtensions.has(extension));
   };
+
+  const onFile = async (file?: File) => {
+    if (!file || !botId || !isAcceptedFile(file)) return;
+    setProgress(0);
+    try {
+      await upload.mutateAsync({ file, onProgress: setProgress });
+    } finally {
+      setProgress(0);
+    }
+  };
+
+  const hasFiles = (event: DragEvent<HTMLElement>) =>
+    Array.from(event.dataTransfer.types).includes("Files");
+
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!hasFiles(event)) return;
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!hasFiles(event)) return;
+    event.dataTransfer.dropEffect = botId && !upload.isPending ? "copy" : "none";
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDragging(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+
+    if (upload.isPending) return;
+    void onFile(event.dataTransfer.files?.[0]);
+  };
+
+  useEffect(() => {
+    const preventFileOpen = (event: globalThis.DragEvent) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+    };
+
+    window.addEventListener("dragover", preventFileOpen);
+    window.addEventListener("drop", preventFileOpen);
+
+    return () => {
+      window.removeEventListener("dragover", preventFileOpen);
+      window.removeEventListener("drop", preventFileOpen);
+    };
+  }, []);
 
   return (
     <DashboardLayout>
@@ -101,8 +165,11 @@ export function KnowledgePage() {
                 <input
                   hidden
                   type="file"
-                  accept=".pdf,.docx,.txt,.csv,.html"
-                  onChange={(event) => onFile(event.target.files?.[0])}
+                  accept={acceptedFileTypes}
+                  onChange={(event) => {
+                    void onFile(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
                 />
               </label>
             </Button>
@@ -135,11 +202,31 @@ export function KnowledgePage() {
             </Button>
           </div>
         )}
-        <div className="rounded-xl border-2 border-dashed border-border bg-surface-1 p-8 text-center">
-          <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
+        <div
+          role="button"
+          tabIndex={0}
+          aria-disabled={!botId || upload.isPending}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`rounded-xl border-2 border-dashed p-8 text-center transition ${
+            isDragging
+              ? "border-primary bg-primary/10 shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+              : "border-border bg-surface-1"
+          }`}
+        >
+          <Upload
+            className={`mx-auto h-7 w-7 transition ${
+              isDragging ? "text-primary" : "text-muted-foreground"
+            }`}
+          />
           <p className="mt-3 font-medium">Upload files to Cloudinary storage</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            PDF, DOCX, CSV, HTML, TXT · uploaded · queued · embedded · searchable
+            PDF, DOCX, CSV, HTML, TXT - uploaded - queued - embedded - searchable
+          </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {isDragging ? "Drop the file here to start upload." : "Drag a file here or use Upload."}
           </p>
           {upload.isPending && <Progress value={progress} className="mx-auto mt-4 max-w-md" />}
         </div>
