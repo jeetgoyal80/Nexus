@@ -17,6 +17,23 @@ export const botRepository = {
     return Bot.findOne({ _id: botId, visibility: "public" });
   },
 
+  findDeployedPublicBotById(botId) {
+    return Bot.findOne({
+      _id: botId,
+      visibility: "public",
+      deploymentStatus: "deployed",
+    });
+  },
+
+  findPublicBotByKey(botId, publicKey) {
+    return Bot.findOne({
+      _id: botId,
+      publicKey,
+      visibility: "public",
+      deploymentStatus: "deployed",
+    });
+  },
+
   findBotByIdAndOwner(botId, ownerId) {
     return Bot.findOne({ _id: botId, ownerId });
   },
@@ -26,6 +43,19 @@ export const botRepository = {
       { _id: botId, ownerId },
       { $set: payload },
       { new: true, runValidators: true },
+    );
+  },
+
+  incrementAnalytics(botId, counters = {}) {
+    return Bot.findByIdAndUpdate(
+      botId,
+      {
+        $inc: Object.fromEntries(
+          Object.entries(counters).map(([key, value]) => [`analytics.${key}`, value]),
+        ),
+        $set: { "analytics.lastUsedAt": new Date() },
+      },
+      { new: true },
     );
   },
 

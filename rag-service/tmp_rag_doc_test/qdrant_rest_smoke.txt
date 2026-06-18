@@ -1,1 +1,0 @@
-Qdrant Cloud stores chatbot knowledge embeddings for semantic retrieval. Backend chat uses retrieved context before calling Groq.

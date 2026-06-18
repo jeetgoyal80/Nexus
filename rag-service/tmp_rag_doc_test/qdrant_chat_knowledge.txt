@@ -1,1 +1,0 @@
-Qdrant Cloud stores vector embeddings for each chatbot. During chat, the Node backend asks the Python RAG service for relevant chunks, injects those chunks into the prompt, and then calls Groq. This improves answer grounding and reduces hallucination.

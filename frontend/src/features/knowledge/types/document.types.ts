@@ -1,11 +1,13 @@
-export type KnowledgeDocumentStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+export type KnowledgeDocumentStatus = "uploaded" | "processing" | "embedded" | "failed";
 
 export type KnowledgeDocument = {
   id: string;
   botId: string;
   originalName: string;
+  cloudinaryUrl?: string;
   mimeType: string;
   size: number;
+  processingStatus: KnowledgeDocumentStatus;
   status: KnowledgeDocumentStatus;
   jobId: string | null;
   chunksCreated: number;

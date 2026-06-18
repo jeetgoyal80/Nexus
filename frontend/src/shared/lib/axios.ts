@@ -34,6 +34,9 @@ const refreshAccessToken = async () => {
       .then((response) => {
         const nextToken = response.data.data.accessToken;
         setApiAccessToken(nextToken);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("nexus:token-refreshed", { detail: nextToken }));
+        }
         return nextToken;
       })
       .finally(() => {

@@ -1,1 +1,0 @@
-Redis caching stores hot backend data in memory. It reduces repeated database reads and improves API latency for frequently requested resources.

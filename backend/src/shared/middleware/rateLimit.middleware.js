@@ -12,3 +12,15 @@ export const authRateLimiter = rateLimit({
     message: "Too many auth requests. Please try again later.",
   },
 });
+
+export const publicChatRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+    message: "Too many public chat requests. Please slow down.",
+  },
+});

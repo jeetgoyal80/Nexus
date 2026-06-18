@@ -1,38 +1,43 @@
-import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 import multer from "multer";
-import { env } from "../../../config/env.js";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { cloudinary } from "../../../config/cloudinary.js";
 import ApiError from "../../../shared/utils/ApiError.js";
 import { HTTP_STATUS } from "../../../shared/constants/httpStatus.js";
 import { ALLOWED_DOCUMENT_MIME_TYPES } from "../constants/document.constants.js";
 
-const uploadDir = path.resolve(env.UPLOAD_DIR);
-fs.mkdirSync(uploadDir, { recursive: true });
+const sanitizeFilename = (filename) => {
+  const extension = path.extname(filename).toLowerCase();
+  const basename = path.basename(filename, extension).replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `${basename || "document"}${extension}`;
+};
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename(req, file, cb) {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-    cb(null, `${Date.now()}-${cryptoRandom()}-${safeName}`);
-  },
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "chatbot-knowledge",
+    resource_type: "raw",
+    type: "upload",
+    access_mode: "public",
+    public_id: `${Date.now()}-${randomUUID()}-${sanitizeFilename(file.originalname)}`,
+  }),
 });
 
 const fileFilter = (req, file, cb) => {
   if (ALLOWED_DOCUMENT_MIME_TYPES.includes(file.mimetype)) {
-    return cb(null, true);
+    cb(null, true);
+    return;
   }
 
-  return cb(new ApiError(HTTP_STATUS.BAD_REQUEST, "Unsupported document type"));
+  cb(new ApiError(HTTP_STATUS.BAD_REQUEST, "Unsupported document type"));
 };
-
-const cryptoRandom = () => Math.random().toString(36).slice(2, 10);
 
 export const uploadDocument = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: 25 * 1024 * 1024,
+    files: 1,
   },
 });

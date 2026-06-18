@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Database, FileText, Loader2, Plus, Search, Upload } from "lucide-react";
+import { CheckCircle2, Database, ExternalLink, FileText, Loader2, Plus, Search, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -15,16 +15,14 @@ import { DashboardLayout, PageHeader } from "@/layouts/dashboard-layout";
 import { OperationalIndicator } from "@/shared/components/ui/operational-indicator";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { useAgents } from "@/features/agents/hooks/use-agents";
-import { useDocuments, useUploadDocument } from "../hooks/use-documents";
+import { useDeleteDocument, useDocuments, useUploadDocument } from "../hooks/use-documents";
 import type { KnowledgeDocument, KnowledgeDocumentStatus } from "../types/document.types";
 
 const pipelineStages = [
-  { label: "Uploaded", statuses: ["PENDING"] },
-  { label: "Processing", statuses: ["PROCESSING"] },
-  { label: "Chunked", statuses: ["COMPLETED"] },
-  { label: "Embedded", statuses: ["COMPLETED"] },
-  { label: "Indexed", statuses: ["COMPLETED"] },
-  { label: "Searchable", statuses: ["COMPLETED"] },
+  { label: "Uploaded", statuses: ["uploaded"] },
+  { label: "Processing", statuses: ["processing"] },
+  { label: "Embedded", statuses: ["embedded"] },
+  { label: "Searchable", statuses: ["embedded"] },
 ];
 
 export function KnowledgePage() {
@@ -33,15 +31,16 @@ export function KnowledgePage() {
   const botId = selectedBotId ?? agents.data?.[0]?.id;
   const docs = useDocuments(botId);
   const upload = useUploadDocument(botId);
+  const deleteDocument = useDeleteDocument(botId);
   const [progress, setProgress] = useState(0);
 
   const stats = useMemo(() => {
     const documents = docs.data ?? [];
     return {
-      pending: documents.filter((doc) => doc.status === "PENDING").length,
-      processing: documents.filter((doc) => doc.status === "PROCESSING").length,
-      completed: documents.filter((doc) => doc.status === "COMPLETED").length,
-      failed: documents.filter((doc) => doc.status === "FAILED").length,
+      pending: documents.filter((doc) => doc.status === "uploaded").length,
+      processing: documents.filter((doc) => doc.status === "processing").length,
+      completed: documents.filter((doc) => doc.status === "embedded").length,
+      failed: documents.filter((doc) => doc.status === "failed").length,
     };
   }, [docs.data]);
 
@@ -91,7 +90,7 @@ export function KnowledgePage() {
                 <input
                   hidden
                   type="file"
-                  accept=".pdf,.docx,.txt,.csv,.html,.md,.xlsx,.xls"
+                  accept=".pdf,.docx,.txt,.csv,.html"
                   onChange={(event) => onFile(event.target.files?.[0])}
                 />
               </label>
@@ -127,9 +126,9 @@ export function KnowledgePage() {
         )}
         <div className="rounded-xl border-2 border-dashed border-border bg-surface-1 p-8 text-center">
           <Upload className="mx-auto h-7 w-7 text-muted-foreground" />
-          <p className="mt-3 font-medium">Upload files to the ingestion worker</p>
+          <p className="mt-3 font-medium">Upload files to Cloudinary storage</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            PDF, DOCX, CSV, HTML, TXT, Markdown, XLS/XLSX · queued · chunked · embedded
+            PDF, DOCX, CSV, HTML, TXT · uploaded · queued · embedded · searchable
           </p>
           {upload.isPending && <Progress value={progress} className="mx-auto mt-4 max-w-md" />}
         </div>
@@ -180,16 +179,21 @@ export function KnowledgePage() {
                   <th className="px-4 py-3 font-medium">Chunks</th>
                   <th className="px-4 py-3 font-medium">Vectors</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {docs.data?.map((doc) => (
-                  <DocumentRow key={doc.id} doc={doc} />
+                  <DocumentRow
+                    key={doc.id}
+                    doc={doc}
+                    onDelete={() => deleteDocument.mutate(doc.id)}
+                  />
                 ))}
                 {!docs.data?.length && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 py-10 text-center text-sm text-muted-foreground"
                     >
                       {botId
@@ -207,7 +211,7 @@ export function KnowledgePage() {
   );
 }
 
-function DocumentRow({ doc }: { doc: KnowledgeDocument }) {
+function DocumentRow({ doc, onDelete }: { doc: KnowledgeDocument; onDelete: () => void }) {
   return (
     <tr className="border-b border-border/60 hover:bg-secondary/40">
       <td className="px-4 py-3">
@@ -223,28 +227,51 @@ function DocumentRow({ doc }: { doc: KnowledgeDocument }) {
       <td className="px-4 py-3">
         <DocStatus status={doc.status} />
       </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-1">
+          {doc.cloudinaryUrl && (
+            <a
+              href={doc.cloudinaryUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              title="Open Cloudinary file"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            title="Delete document"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </td>
     </tr>
   );
 }
 
 function DocStatus({ status }: { status: KnowledgeDocumentStatus }) {
   const map = {
-    COMPLETED: {
+    embedded: {
       className: "text-emerald-300 bg-emerald-500/10",
       icon: <CheckCircle2 className="h-3 w-3" />,
       label: "Searchable",
     },
-    PROCESSING: {
+    processing: {
       className: "text-amber-300 bg-amber-500/10",
       icon: <Loader2 className="h-3 w-3 animate-spin" />,
       label: "Processing",
     },
-    PENDING: {
+    uploaded: {
       className: "text-blue-300 bg-blue-500/10",
       icon: <Database className="h-3 w-3" />,
       label: "Uploaded",
     },
-    FAILED: {
+    failed: {
       className: "text-destructive bg-destructive/10",
       icon: <Upload className="h-3 w-3" />,
       label: "Failed",

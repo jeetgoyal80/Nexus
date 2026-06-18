@@ -1,1 +1,0 @@
-Qdrant stores vector embeddings for semantic search. Redis caching stores hot backend data in memory and reduces repeated database reads.

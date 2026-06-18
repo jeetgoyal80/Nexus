@@ -9,6 +9,12 @@ const documentSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+      default: null,
+    },
     botId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Bot",
@@ -20,27 +26,48 @@ const documentSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    cloudinaryPublicId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    cloudinaryUrl: {
+      type: String,
+      default: null,
+    },
+    fileType: {
+      type: String,
+      default: null,
+    },
+    fileSize: {
+      type: Number,
+      default: null,
+    },
     storedName: {
       type: String,
-      required: true,
       trim: true,
+      default: null,
     },
     filePath: {
       type: String,
-      required: true,
+      default: null,
     },
     mimeType: {
       type: String,
-      required: true,
+      default: null,
     },
     size: {
       type: Number,
-      required: true,
+      default: null,
     },
     status: {
       type: String,
+      default: null,
+    },
+    processingStatus: {
+      type: String,
       enum: Object.values(DOCUMENT_STATUS),
-      default: DOCUMENT_STATUS.PENDING,
+      default: DOCUMENT_STATUS.UPLOADED,
       index: true,
     },
     jobId: {
@@ -78,13 +105,26 @@ const documentSchema = new mongoose.Schema(
 documentSchema.index({ ownerId: 1, botId: 1, createdAt: -1 });
 
 documentSchema.methods.toClientObject = function toClientObject() {
+  const processingStatus =
+    this.status === "FAILED"
+      ? DOCUMENT_STATUS.FAILED
+      : this.status === "PROCESSING"
+        ? DOCUMENT_STATUS.PROCESSING
+        : this.status === "COMPLETED"
+          ? DOCUMENT_STATUS.EMBEDDED
+          : this.processingStatus ||
+            (this.vectorsStored > 0 ? DOCUMENT_STATUS.EMBEDDED : DOCUMENT_STATUS.UPLOADED);
+
   return {
     id: this._id.toString(),
     botId: this.botId.toString(),
     originalName: this.originalName,
-    mimeType: this.mimeType,
-    size: this.size,
-    status: this.status,
+    cloudinaryUrl: this.cloudinaryUrl,
+    mimeType: this.fileType || this.mimeType,
+    size: this.fileSize ?? this.size ?? 0,
+    processingStatus,
+    status: processingStatus,
+    uploadDate: this.createdAt,
     jobId: this.jobId,
     chunksCreated: this.chunksCreated,
     vectorsStored: this.vectorsStored,

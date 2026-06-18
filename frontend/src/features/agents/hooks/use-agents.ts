@@ -6,6 +6,7 @@ import { getAgent } from "../api/get-agent";
 import { createAgent } from "../api/create-agent";
 import { updateAgent } from "../api/update-agent";
 import { deleteAgent } from "../api/delete-agent";
+import { deployAgent, unpublishAgent } from "../api/deploy-agent";
 
 export const agentKeys = {
   all: ["agents"] as const,
@@ -52,6 +53,24 @@ export function useAgentMutations() {
         toast.success("Agent deleted");
       },
       onError: (error) => toast.error(getApiErrorMessage(error, "Agent deletion failed")),
+    }),
+    deploy: useMutation({
+      mutationFn: deployAgent,
+      onSuccess: ({ bot }) => {
+        queryClient.invalidateQueries({ queryKey: agentKeys.all });
+        queryClient.setQueryData(agentKeys.detail(bot.id), bot);
+        toast.success(`${bot.name} deployed`);
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error, "Deployment failed")),
+    }),
+    unpublish: useMutation({
+      mutationFn: unpublishAgent,
+      onSuccess: ({ bot }) => {
+        queryClient.invalidateQueries({ queryKey: agentKeys.all });
+        queryClient.setQueryData(agentKeys.detail(bot.id), bot);
+        toast.success(`${bot.name} unpublished`);
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error, "Unpublish failed")),
     }),
   };
 }

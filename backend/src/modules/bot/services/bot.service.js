@@ -1,7 +1,12 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 import ApiError from "../../../shared/utils/ApiError.js";
 import { HTTP_STATUS } from "../../../shared/constants/httpStatus.js";
 import { botRepository } from "../repositories/bot.repository.js";
+import {
+  BOT_DEPLOYMENT_STATUS,
+  BOT_VISIBILITY,
+} from "../constants/bot.constants.js";
 
 const assertValidObjectId = (id, resourceName = "Resource") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -22,6 +27,10 @@ const sanitizeUpdatePayload = (payload) => {
     "welcomeMessage",
     "avatar",
     "visibility",
+    "deploymentMode",
+    "sdkEnabled",
+    "apiEnabled",
+    "appearanceConfig",
   ];
 
   return allowedFields.reduce((update, field) => {
@@ -65,6 +74,47 @@ export const botService = {
 
     const updatePayload = sanitizeUpdatePayload(payload);
     const bot = await botRepository.updateBotByIdAndOwner(botId, ownerId, updatePayload);
+
+    if (!bot) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");
+    }
+
+    return bot.toClientObject();
+  },
+
+  async deployBot(ownerId, botId) {
+    assertValidObjectId(botId, "Bot");
+
+    const bot = await botRepository.findBotByIdAndOwner(botId, ownerId);
+
+    if (!bot) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");
+    }
+
+    const publicKey = bot.publicKey || `pk_test_${crypto.randomBytes(18).toString("hex")}`;
+    const publicSlug = bot.publicSlug || `${bot.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${bot._id.toString().slice(-6)}`;
+
+    const deployedBot = await botRepository.updateBotByIdAndOwner(botId, ownerId, {
+      visibility: BOT_VISIBILITY.PUBLIC,
+      deploymentStatus: BOT_DEPLOYMENT_STATUS.DEPLOYED,
+      publicKey,
+      publicSlug,
+      sdkEnabled: true,
+      apiEnabled: true,
+    });
+
+    return deployedBot.toClientObject();
+  },
+
+  async unpublishBot(ownerId, botId) {
+    assertValidObjectId(botId, "Bot");
+
+    const bot = await botRepository.updateBotByIdAndOwner(botId, ownerId, {
+      visibility: BOT_VISIBILITY.PRIVATE,
+      deploymentStatus: BOT_DEPLOYMENT_STATUS.DRAFT,
+      sdkEnabled: false,
+      apiEnabled: false,
+    });
 
     if (!bot) {
       throw new ApiError(HTTP_STATUS.NOT_FOUND, "Bot not found");

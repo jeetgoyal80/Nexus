@@ -1,1 +1,0 @@
-Redis caching stores frequently accessed backend data in memory. It reduces repeated database reads, lowers database pressure, and improves API latency for frequently requested resources. Use Redis for hot data such as session lookups, product summaries, feature flags, and rate-limit counters.

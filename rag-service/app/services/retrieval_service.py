@@ -11,6 +11,9 @@ class VectorStore(Protocol):
     def search(self, bot_id: str, query_embedding, top_k: int) -> list[dict]:
         ...
 
+    def delete_source(self, bot_id: str, source: str) -> None:
+        ...
+
 
 class RetrievalService:
     def __init__(

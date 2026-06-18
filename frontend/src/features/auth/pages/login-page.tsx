@@ -4,12 +4,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { AuthLayout } from "@/layouts/auth-layout";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { GoogleAuthButton } from "../components/google-auth-button";
 import { useAuthActions } from "../hooks/use-auth-actions";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuthActions();
+  const { login, googleLogin } = useAuthActions();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -22,6 +25,15 @@ export function LoginPage() {
       navigate({ to: "/dashboard" });
     } catch {
       toast.error("Login failed. Check your email and password.");
+    }
+  };
+
+  const submitGoogle = async (idToken: string) => {
+    try {
+      await googleLogin.mutateAsync(idToken);
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Google login failed. Try again."));
     }
   };
 
@@ -51,6 +63,17 @@ export function LoginPage() {
         >
           {login.isPending ? "Signing in..." : "Sign in"}
         </Button>
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
+          <Separator className="flex-1" />
+        </div>
+        <GoogleAuthButton
+          text="signin_with"
+          disabled={googleLogin.isPending}
+          onToken={submitGoogle}
+          onError={() => toast.error("Google login was cancelled or failed.")}
+        />
         <p className="text-center text-sm text-muted-foreground">
           New workspace?{" "}
           <Link to="/signup" className="text-primary">

@@ -13,7 +13,15 @@ export const documentRepository = {
     return Document.find({ botId, ownerId }).sort({ createdAt: -1 });
   },
 
+  findByOwner(ownerId) {
+    return Document.find({ ownerId }).sort({ createdAt: -1 });
+  },
+
   updateById(documentId, payload) {
     return Document.findByIdAndUpdate(documentId, { $set: payload }, { new: true });
+  },
+
+  deleteByIdAndOwner(documentId, ownerId) {
+    return Document.findOneAndDelete({ _id: documentId, ownerId });
   },
 };

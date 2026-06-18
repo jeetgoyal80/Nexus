@@ -40,6 +40,22 @@ export const botController = {
       .json(new ApiResponse(HTTP_STATUS.OK, "Bot updated successfully", { bot }));
   }),
 
+  deployBot: asyncHandler(async (req, res) => {
+    const bot = await botService.deployBot(req.user.id, req.validated.params.id);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Bot deployed successfully", { bot }));
+  }),
+
+  unpublishBot: asyncHandler(async (req, res) => {
+    const bot = await botService.unpublishBot(req.user.id, req.validated.params.id);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Bot unpublished successfully", { bot }));
+  }),
+
   deleteBot: asyncHandler(async (req, res) => {
     const bot = await botService.deleteBot(req.user.id, req.validated.params.id);
 

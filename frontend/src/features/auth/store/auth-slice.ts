@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { REHYDRATE } from "redux-persist";
 import { tokenStorage } from "../services/token-storage";
 import type { User } from "../types/auth.types";
 
@@ -24,8 +25,14 @@ export const authSlice = createSlice({
       state.status = "authenticated";
       tokenStorage.setAccessToken(action.payload.accessToken);
     },
+    sessionRestoreStarted(state) {
+      if (state.accessToken) {
+        state.status = "restoring";
+      }
+    },
     accessTokenRefreshed(state, action: PayloadAction<string>) {
       state.accessToken = action.payload;
+      state.status = state.user ? "authenticated" : "restoring";
       tokenStorage.setAccessToken(action.payload);
     },
     sessionRestored(state, action: PayloadAction<User>) {
@@ -45,10 +52,30 @@ export const authSlice = createSlice({
       tokenStorage.clearAccessToken();
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(REHYDRATE, (state, action) => {
+      const rehydrateAction = action as {
+        key?: string;
+        payload?: Partial<AuthState>;
+      };
+
+      if (rehydrateAction.key !== "auth") return;
+
+      const persistedToken = rehydrateAction.payload?.accessToken;
+
+      if (persistedToken) {
+        state.accessToken = persistedToken;
+        state.user = rehydrateAction.payload?.user ?? state.user;
+        state.status = "restoring";
+        tokenStorage.setAccessToken(persistedToken);
+      }
+    });
+  },
 });
 
 export const {
   sessionStarted,
+  sessionRestoreStarted,
   accessTokenRefreshed,
   sessionRestored,
   sessionRestoreFailed,

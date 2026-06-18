@@ -11,4 +11,20 @@ export const publicBotController = {
       .status(HTTP_STATUS.OK)
       .json(new ApiResponse(HTTP_STATUS.OK, "Public bot fetched successfully", { bot }));
   }),
+
+  getPublicBotConfig: asyncHandler(async (req, res) => {
+    const config = await publicBotService.getPublicBotConfig(req.validated.params.botId);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Public bot config fetched successfully", config));
+  }),
+
+  executePublicChat: asyncHandler(async (req, res) => {
+    const result = await publicBotService.executePublicChat(req.validated.body);
+
+    return res
+      .status(HTTP_STATUS.OK)
+      .json(new ApiResponse(HTTP_STATUS.OK, "Public chat response generated successfully", result));
+  }),
 };

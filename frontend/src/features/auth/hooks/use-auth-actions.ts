@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/app/store/hooks";
+import { persistor } from "@/app/store/store";
 import { loggedOut, sessionStarted } from "../store/auth-slice";
 import { setApiAccessToken } from "@/shared/lib/axios";
 import { login } from "../api/login";
@@ -37,13 +38,13 @@ export function useAuthActions() {
     googleLogin: useMutation({
       mutationFn: googleLogin,
       onSuccess: onSession,
-      onError: () => toast.error("Google authentication failed"),
     }),
     logout: useMutation({
       mutationFn: logout,
       onSettled: () => {
         setApiAccessToken(null);
         dispatch(loggedOut());
+        persistor.purge();
         queryClient.clear();
       },
     }),

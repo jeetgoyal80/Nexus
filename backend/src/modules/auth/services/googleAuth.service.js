@@ -23,11 +23,15 @@ export const googleAuthService = {
       });
     }
 
-    if (user.provider !== AUTH_PROVIDER.GOOGLE || user.googleId !== googleProfile.googleId) {
+    if (user.googleId && user.googleId !== googleProfile.googleId) {
       throw new ApiError(
         HTTP_STATUS.CONFLICT,
-        "An account already exists with this email using a different auth provider",
+        "This email is already linked to a different Google account",
       );
+    }
+
+    if (!user.googleId) {
+      user = await authRepository.linkGoogleIdentity(user._id, googleProfile.googleId);
     }
 
     const tokens = tokenService.generateTokenPair(user);

@@ -39,6 +39,14 @@ export const authRepository = {
     });
   },
 
+  linkGoogleIdentity(userId, googleId) {
+    return User.findByIdAndUpdate(
+      userId,
+      { $set: { googleId } },
+      { new: true },
+    );
+  },
+
   async addRefreshToken(userId, refreshToken) {
     return User.findByIdAndUpdate(
       userId,

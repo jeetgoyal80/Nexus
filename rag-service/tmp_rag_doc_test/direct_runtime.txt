@@ -1,1 +1,0 @@
-Redis caching stores frequently accessed backend data in memory. This reduces database load and improves API latency. MongoDB stores durable application documents.

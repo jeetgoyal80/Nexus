@@ -26,3 +26,15 @@ class IngestResponse(BaseModel):
     source: str
     chunksCreated: int
     vectorsStored: int
+
+
+class IngestUrlRequest(BaseModel):
+    botId: str = Field(..., min_length=1)
+    fileUrl: str = Field(..., min_length=1)
+    originalName: str = Field(..., min_length=1)
+    sourceId: str | None = None
+
+
+class DeleteSourceRequest(BaseModel):
+    botId: str = Field(..., min_length=1)
+    source: str = Field(..., min_length=1)

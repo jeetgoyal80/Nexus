@@ -20,6 +20,9 @@ const envSchema = z.object({
   RAG_CONTEXT_MAX_CHARS: z.coerce.number().default(4500),
   RAG_CONTEXT_CHUNK_MAX_CHARS: z.coerce.number().default(1500),
   CHAT_HISTORY_LIMIT: z.coerce.number().default(4),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME is required"),
+  CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY is required"),
+  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
   REDIS_URL: z.string().default("redis://localhost:6379"),
   REDIS_TLS_REJECT_UNAUTHORIZED: z
     .enum(["true", "false"])
@@ -27,7 +30,6 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   REDIS_CONNECT_TIMEOUT_MS: z.coerce.number().default(10000),
   REDIS_MAX_RECONNECT_DELAY_MS: z.coerce.number().default(10000),
-  UPLOAD_DIR: z.string().default("uploads"),
   INGESTION_WORKER_CONCURRENCY: z.coerce.number().default(2),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   COOKIE_DOMAIN: z.string().optional(),

@@ -1,7 +1,16 @@
 import hashlib
 import uuid
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, PointStruct, VectorParams
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    FilterSelector,
+    MatchValue,
+    PayloadSchemaType,
+    PointStruct,
+    VectorParams,
+)
 from app.services.chunking_service import TextChunk
 
 
@@ -69,16 +78,45 @@ class QdrantVectorStoreService:
 
         return matches
 
-    def _ensure_collection(self, collection_name: str) -> None:
-        if self.client.collection_exists(collection_name=collection_name):
+    def delete_source(self, bot_id: str, source: str) -> None:
+        collection_name = self._collection_name(bot_id)
+
+        if not self.client.collection_exists(collection_name=collection_name):
             return
 
-        self.client.create_collection(
+        self._ensure_source_index(collection_name)
+
+        self.client.delete(
             collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=self.dimension,
-                distance=Distance.COSINE,
+            points_selector=FilterSelector(
+                filter=Filter(
+                    must=[
+                        FieldCondition(
+                            key="source",
+                            match=MatchValue(value=source),
+                        )
+                    ]
+                )
             ),
+        )
+
+    def _ensure_collection(self, collection_name: str) -> None:
+        if not self.client.collection_exists(collection_name=collection_name):
+            self.client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=self.dimension,
+                    distance=Distance.COSINE,
+                ),
+            )
+
+        self._ensure_source_index(collection_name)
+
+    def _ensure_source_index(self, collection_name: str) -> None:
+        self.client.create_payload_index(
+            collection_name=collection_name,
+            field_name="source",
+            field_schema=PayloadSchemaType.KEYWORD,
         )
 
     def _collection_name(self, bot_id: str) -> str:

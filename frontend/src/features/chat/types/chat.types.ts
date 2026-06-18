@@ -1,3 +1,5 @@
+import type { AppearanceConfig } from "@/features/agents/appearance/appearance.types";
+
 export type PublicBot = {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export type PublicBot = {
   welcomeMessage: string;
   avatar: string;
   visibility: "public";
+  appearanceConfig: AppearanceConfig;
 };
 
 export type ChatMessage = {

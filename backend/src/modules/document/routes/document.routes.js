@@ -13,6 +13,19 @@ router.post(
   uploadDocument.single("file"),
   documentController.uploadDocument,
 );
+router.post(
+  "/knowledge/upload/:botId",
+  authenticate,
+  validate(botIdParamSchema),
+  uploadDocument.single("file"),
+  documentController.uploadDocument,
+);
+router.post(
+  "/knowledge/upload",
+  authenticate,
+  uploadDocument.single("file"),
+  documentController.uploadDocument,
+);
 
 router.get(
   "/bots/:botId/documents",
@@ -20,11 +33,18 @@ router.get(
   validate(botIdParamSchema),
   documentController.getBotDocuments,
 );
+router.get("/knowledge", authenticate, documentController.getMyDocuments);
 router.get(
   "/documents/:id",
   authenticate,
   validate(documentIdParamSchema),
   documentController.getDocumentStatus,
+);
+router.delete(
+  "/knowledge/:id",
+  authenticate,
+  validate(documentIdParamSchema),
+  documentController.deleteDocument,
 );
 
 export default router;
