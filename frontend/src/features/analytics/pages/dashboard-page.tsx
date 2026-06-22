@@ -19,9 +19,11 @@ import {
   YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { DashboardLayout, PageHeader } from "@/layouts/dashboard-layout";
 import { OperationalIndicator } from "@/shared/components/ui/operational-indicator";
 import { useOperationalOverview } from "../hooks/use-operational-overview";
+import { useRuntimeUsage } from "@/features/runtime/hooks/use-runtime-usage";
 
 const emptySeries = Array.from({ length: 12 }).map((_, i) => ({
   t: `${i * 2}:00`,
@@ -31,6 +33,13 @@ const emptySeries = Array.from({ length: 12 }).map((_, i) => ({
 
 export function DashboardPage() {
   const { agents, infrastructure, metrics } = useOperationalOverview();
+  const runtimeUsage = useRuntimeUsage();
+  const usage = runtimeUsage.data?.usage;
+  const plan = usage?.subscriptionPlan ?? "free";
+  const hostedLimit = usage?.hostedMessagesPerDay ?? 100;
+  const hostedUsed = usage?.messagesToday ?? 0;
+  const hostedPercent =
+    hostedLimit === Number.MAX_SAFE_INTEGER ? 0 : Math.min(100, (hostedUsed / hostedLimit) * 100);
   const liveSeries = (agents.data?.length ? agents.data : []).slice(0, 12).map((agent, index) => ({
     t: agent.name.slice(0, 10),
     runtime: index + 1,
@@ -64,17 +73,26 @@ export function DashboardPage() {
       />
 
       <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-5 elevated">
+          <div className="flex items-center justify-between">
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-secondary text-primary">
+              <Rocket className="h-4 w-4" />
+            </span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] uppercase tracking-wider text-primary">
+              {usage?.bypassBilling ? "Dev Pro" : `${plan} plan`}
+            </span>
+          </div>
+          <p className="mt-4 text-2xl font-semibold tracking-tight">
+            {usage?.bypassBilling ? "Unlimited" : `${hostedUsed} / ${hostedLimit}`}
+          </p>
+          <p className="text-xs text-muted-foreground">Hosted messages today</p>
+          {!usage?.bypassBilling && <Progress value={hostedPercent} className="mt-3 h-1.5" />}
+        </div>
         <Metric
           icon={Bot}
           label="Active agents"
           value={String(metrics.activeAgents)}
           delta={`${metrics.publicAgents} public`}
-        />
-        <Metric
-          icon={Rocket}
-          label="Public deployments"
-          value={String(metrics.publicAgents)}
-          delta="runtime exposed"
         />
         <Metric
           icon={Database}

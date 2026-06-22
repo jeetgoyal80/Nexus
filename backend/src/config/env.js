@@ -15,6 +15,11 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   GROQ_MODEL: z.string().default("llama-3.1-8b-instant"),
   GROQ_MAX_COMPLETION_TOKENS: z.coerce.number().default(700),
+  ENCRYPTION_SECRET: z.string().min(16, "ENCRYPTION_SECRET must be at least 16 characters").optional(),
+  BYPASS_BILLING: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
   RAG_SERVICE_URL: z.string().url().default("http://localhost:8001"),
   RAG_TOP_K: z.coerce.number().default(3),
   RAG_CONTEXT_MAX_CHARS: z.coerce.number().default(4500),

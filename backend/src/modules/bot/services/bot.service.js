@@ -7,6 +7,10 @@ import {
   BOT_DEPLOYMENT_STATUS,
   BOT_VISIBILITY,
 } from "../constants/bot.constants.js";
+import { RUNTIME_PROVIDER } from "../../../config/plans.js";
+import { encryptionService } from "../../../shared/services/encryption.service.js";
+import { authRepository } from "../../auth/repositories/auth.repository.js";
+import { featureGateService } from "../../billing/services/featureGate.service.js";
 
 const assertValidObjectId = (id, resourceName = "Resource") => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -31,6 +35,8 @@ const sanitizeUpdatePayload = (payload) => {
     "sdkEnabled",
     "apiEnabled",
     "appearanceConfig",
+    "runtimeProvider",
+    "model",
   ];
 
   return allowedFields.reduce((update, field) => {
@@ -40,6 +46,29 @@ const sanitizeUpdatePayload = (payload) => {
 
     return update;
   }, {});
+};
+
+const buildRuntimePayload = (payload) => {
+  const update = {};
+
+  if (payload.runtimeProvider !== undefined) {
+    update.runtimeProvider = payload.runtimeProvider;
+  }
+
+  if (payload.model !== undefined) {
+    update.model = payload.model;
+  }
+
+  if (payload.apiKey !== undefined) {
+    update.encryptedApiKey =
+      payload.runtimeProvider === RUNTIME_PROVIDER.PLATFORM ? null : encryptionService.encrypt(payload.apiKey);
+  }
+
+  if (payload.runtimeProvider === RUNTIME_PROVIDER.PLATFORM) {
+    update.encryptedApiKey = null;
+  }
+
+  return update;
 };
 
 const generatePublicKey = () => `pk_test_${crypto.randomBytes(24).toString("hex")}`;
@@ -55,10 +84,23 @@ const generatePublicSlug = (bot) => {
   return `${base}-${bot._id.toString().slice(-8)}`;
 };
 
+const assertPrivateBotAllowed = async (ownerId, payload) => {
+  if (payload.visibility !== BOT_VISIBILITY.PRIVATE) return;
+
+  const user = await authRepository.findById(ownerId);
+  if (!featureGateService.canCreatePrivateBots(user)) {
+    throw new ApiError(HTTP_STATUS.FORBIDDEN, "Private bots are available on the Pro plan.");
+  }
+};
+
 export const botService = {
   async createBot(ownerId, payload) {
+    await assertPrivateBotAllowed(ownerId, payload);
+
     const bot = await botRepository.createBot({
       ...payload,
+      ...buildRuntimePayload(payload),
+      apiKey: undefined,
       ownerId,
     });
 
@@ -84,8 +126,10 @@ export const botService = {
 
   async updateBot(ownerId, botId, payload) {
     assertValidObjectId(botId, "Bot");
+    await assertPrivateBotAllowed(ownerId, payload);
 
     const updatePayload = sanitizeUpdatePayload(payload);
+    Object.assign(updatePayload, buildRuntimePayload(payload));
     const bot = await botRepository.updateBotByIdAndOwner(botId, ownerId, updatePayload);
 
     if (!bot) {

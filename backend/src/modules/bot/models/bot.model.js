@@ -199,6 +199,23 @@ const botSchema = new mongoose.Schema(
       type: appearanceConfigSchema,
       default: () => DEFAULT_APPEARANCE_CONFIG,
     },
+    runtimeProvider: {
+      type: String,
+      enum: ["user", "platform"],
+      default: "user",
+      index: true,
+    },
+    encryptedApiKey: {
+      type: String,
+      select: false,
+      default: null,
+    },
+    model: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+      default: "llama-3.1-8b-instant",
+    },
   },
   {
     timestamps: true,
@@ -237,6 +254,9 @@ botSchema.methods.toClientObject = function toClientObject() {
       ...DEFAULT_APPEARANCE_CONFIG,
       ...(this.appearanceConfig?.toObject?.() ?? this.appearanceConfig ?? {}),
     },
+    runtimeProvider: this.runtimeProvider,
+    hasUserApiKey: Boolean(this.encryptedApiKey),
+    model: this.model,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };
@@ -261,6 +281,8 @@ botSchema.methods.toPublicRuntimeObject = function toPublicRuntimeObject() {
       ...DEFAULT_APPEARANCE_CONFIG,
       ...(this.appearanceConfig?.toObject?.() ?? this.appearanceConfig ?? {}),
     },
+    runtimeProvider: this.runtimeProvider,
+    model: this.model,
   };
 };
 

@@ -108,6 +108,9 @@ const createBotFields = {
   sdkEnabled: z.boolean().optional(),
   apiEnabled: z.boolean().optional(),
   appearanceConfig: appearanceConfigSchema.optional(),
+  runtimeProvider: z.enum(["user", "platform"]).optional(),
+  apiKey: z.string().trim().min(20).max(300).optional(),
+  model: z.string().trim().min(2).max(120).optional(),
 };
 
 const updateBotFields = {
@@ -126,6 +129,9 @@ const updateBotFields = {
   sdkEnabled: z.boolean().optional(),
   apiEnabled: z.boolean().optional(),
   appearanceConfig: appearanceConfigSchema.optional(),
+  runtimeProvider: z.enum(["user", "platform"]).optional(),
+  apiKey: z.string().trim().min(20).max(300).optional(),
+  model: z.string().trim().min(2).max(120).optional(),
 };
 
 export const createBotSchema = z.object({

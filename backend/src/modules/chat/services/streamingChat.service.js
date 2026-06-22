@@ -5,6 +5,7 @@ import { outputFormatterService } from "./outputFormatter.service.js";
 import { promptBuilderService } from "./promptBuilder.service.js";
 import { ragClientService } from "../../rag/services/ragClient.service.js";
 import { sseService } from "./sse.service.js";
+import { usageService } from "../../billing/services/usage.service.js";
 
 export const streamingChatService = {
   async executeStream({ botId, user, message, conversationId, sessionId, res, signal }) {
@@ -18,6 +19,8 @@ export const streamingChatService = {
         conversationId,
         sessionId,
       });
+
+      await usageService.assertHostedRuntimeAllowed(bot);
 
       const history = conversation.messages || [];
       const retrievedContext = await ragClientService.retrieveContext({
@@ -47,6 +50,7 @@ export const streamingChatService = {
       let model = null;
 
       for await (const chunk of llmStreamingService.streamResponse({
+        bot,
         systemPrompt,
         history,
         userMessage: message,
@@ -74,6 +78,8 @@ export const streamingChatService = {
           },
         },
       ]);
+
+      await usageService.incrementHostedUsage(bot);
 
       sseService.sendDone(res, {
         conversationId: updatedConversation._id.toString(),

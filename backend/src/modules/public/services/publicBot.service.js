@@ -9,6 +9,7 @@ import { llmOrchestratorService } from "../../chat/services/llmOrchestrator.serv
 import { outputFormatterService } from "../../chat/services/outputFormatter.service.js";
 import { ragClientService } from "../../rag/services/ragClient.service.js";
 import { analyticsService } from "../../analytics/services/analytics.service.js";
+import { usageService } from "../../billing/services/usage.service.js";
 
 const assertValidBotId = (botId) => {
   if (!mongoose.Types.ObjectId.isValid(botId)) {
@@ -71,6 +72,7 @@ export const publicBotService = {
 
     const bot = await botRepository.findPublicBotByKey(botId, publicKey);
     assertPublicRuntimeEnabled(bot, { requireApi: true });
+    await usageService.assertHostedRuntimeAllowed(bot);
 
     const resolvedSessionId = sessionId || crypto.randomUUID();
     const conversation = conversationId
@@ -109,6 +111,7 @@ export const publicBotService = {
     });
 
     const llmResult = await llmOrchestratorService.generateResponse({
+      bot,
       systemPrompt,
       history,
       userMessage: message,
@@ -148,6 +151,8 @@ export const publicBotService = {
       userAgent: requestMeta.userAgent,
       isNewConversation: !conversationId,
     });
+
+    await usageService.incrementHostedUsage(bot);
 
     return {
       response: formattedResponse,

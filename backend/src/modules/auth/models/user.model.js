@@ -59,6 +59,23 @@ const userSchema = new mongoose.Schema(
       default: [],
       select: false,
     },
+    subscriptionPlan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+      index: true,
+    },
+    usage: {
+      messagesToday: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      lastResetDate: {
+        type: Date,
+        default: () => new Date(),
+      },
+    },
   },
   {
     timestamps: true,
@@ -89,6 +106,8 @@ userSchema.methods.toSafeObject = function toSafeObject() {
     email: this.email,
     provider: this.provider,
     role: this.role,
+    subscriptionPlan: this.subscriptionPlan,
+    usage: this.usage,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

@@ -10,7 +10,7 @@ export const botRepository = {
   },
 
   findBotById(botId) {
-    return Bot.findById(botId);
+    return Bot.findById(botId).select("+encryptedApiKey");
   },
 
   findPublicBotById(botId) {
@@ -31,11 +31,11 @@ export const botRepository = {
       publicKey,
       visibility: "public",
       deploymentStatus: "deployed",
-    });
+    }).select("+encryptedApiKey");
   },
 
   findBotByIdAndOwner(botId, ownerId) {
-    return Bot.findOne({ _id: botId, ownerId });
+    return Bot.findOne({ _id: botId, ownerId }).select("+encryptedApiKey");
   },
 
   updateBotByIdAndOwner(botId, ownerId, payload) {
@@ -43,7 +43,7 @@ export const botRepository = {
       { _id: botId, ownerId },
       { $set: payload },
       { new: true, runValidators: true },
-    );
+    ).select("+encryptedApiKey");
   },
 
   incrementAnalytics(botId, counters = {}) {

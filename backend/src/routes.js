@@ -7,6 +7,7 @@ import { botModule } from "./modules/bot/bot.module.js";
 import { chatModule } from "./modules/chat/chat.module.js";
 import { documentModule } from "./modules/document/document.module.js";
 import { publicModule } from "./modules/public/public.module.js";
+import { runtimeModule } from "./modules/runtime/runtime.module.js";
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use(botModule.path, botModule.routes);
 router.use(documentModule.path, documentModule.routes);
 router.use(chatModule.path, chatModule.routes);
 router.use(publicModule.path, publicModule.routes);
+router.use(runtimeModule.path, runtimeModule.routes);
 
 export default router;

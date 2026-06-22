@@ -5,8 +5,15 @@ import { HTTP_STATUS } from "../../shared/constants/httpStatus.js";
 const GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 export const groqProvider = {
-  async generateChatCompletion({ systemPrompt, messages, temperature = 0.4 }) {
-    if (!env.GROQ_API_KEY) {
+  async generateChatCompletion({
+    systemPrompt,
+    messages,
+    temperature = 0.4,
+    apiKey = env.GROQ_API_KEY,
+    model = env.GROQ_MODEL,
+    maxTokens = env.GROQ_MAX_COMPLETION_TOKENS,
+  }) {
+    if (!apiKey) {
       throw new ApiError(
         HTTP_STATUS.SERVICE_UNAVAILABLE,
         "Groq provider is not configured. Set GROQ_API_KEY in environment variables.",
@@ -16,13 +23,13 @@ export const groqProvider = {
     const response = await fetch(GROQ_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: env.GROQ_MODEL,
+        model,
         temperature,
-        max_tokens: env.GROQ_MAX_COMPLETION_TOKENS,
+        max_tokens: maxTokens,
         messages: [
           {
             role: "system",
@@ -51,13 +58,21 @@ export const groqProvider = {
     return {
       content,
       provider: "groq",
-      model: payload.model || env.GROQ_MODEL,
+      model: payload.model || model,
       usage: payload.usage || null,
     };
   },
 
-  async *streamChatCompletion({ systemPrompt, messages, temperature = 0.4, signal }) {
-    if (!env.GROQ_API_KEY) {
+  async *streamChatCompletion({
+    systemPrompt,
+    messages,
+    temperature = 0.4,
+    signal,
+    apiKey = env.GROQ_API_KEY,
+    model = env.GROQ_MODEL,
+    maxTokens = env.GROQ_MAX_COMPLETION_TOKENS,
+  }) {
+    if (!apiKey) {
       throw new ApiError(
         HTTP_STATUS.SERVICE_UNAVAILABLE,
         "Groq provider is not configured. Set GROQ_API_KEY in environment variables.",
@@ -67,14 +82,14 @@ export const groqProvider = {
     const response = await fetch(GROQ_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       signal,
       body: JSON.stringify({
-        model: env.GROQ_MODEL,
+        model,
         temperature,
-        max_tokens: env.GROQ_MAX_COMPLETION_TOKENS,
+        max_tokens: maxTokens,
         stream: true,
         messages: [
           {
@@ -103,7 +118,7 @@ export const groqProvider = {
 
     const decoder = new TextDecoder();
     let buffer = "";
-    let model = env.GROQ_MODEL;
+    let resolvedModel = model;
 
     for await (const chunk of response.body) {
       buffer += decoder.decode(chunk, { stream: true });
@@ -130,14 +145,14 @@ export const groqProvider = {
             continue;
           }
 
-          model = payload.model || model;
+          resolvedModel = payload.model || resolvedModel;
           const token = payload?.choices?.[0]?.delta?.content || "";
 
           if (token) {
             yield {
               token,
               provider: "groq",
-              model,
+              model: resolvedModel,
             };
           }
         }

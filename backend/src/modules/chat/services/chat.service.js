@@ -4,6 +4,7 @@ import { promptBuilderService } from "./promptBuilder.service.js";
 import { llmOrchestratorService } from "./llmOrchestrator.service.js";
 import { outputFormatterService } from "./outputFormatter.service.js";
 import { ragClientService } from "../../rag/services/ragClient.service.js";
+import { usageService } from "../../billing/services/usage.service.js";
 
 export const chatService = {
   async executeChat({ botId, user, message, conversationId, sessionId }) {
@@ -13,6 +14,8 @@ export const chatService = {
       conversationId,
       sessionId,
     });
+
+    await usageService.assertHostedRuntimeAllowed(bot);
 
     const history = conversation.messages || [];
     const retrievedContext = await ragClientService.retrieveContext({
@@ -32,6 +35,7 @@ export const chatService = {
     });
 
     const llmResult = await llmOrchestratorService.generateResponse({
+      bot,
       systemPrompt,
       history,
       userMessage: message,
@@ -54,6 +58,8 @@ export const chatService = {
         },
       },
     ]);
+
+    await usageService.incrementHostedUsage(bot);
 
     return {
       conversationId: updatedConversation._id.toString(),

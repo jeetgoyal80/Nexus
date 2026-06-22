@@ -5,6 +5,7 @@ export type AgentVisibility = "private" | "public";
 export type AgentOutputFormat = "paragraph" | "bullet_points" | "structured_json";
 export type AgentDeploymentStatus = "draft" | "deployed";
 export type AgentDeploymentMode = "widget" | "embedded" | "fullscreen";
+export type AgentRuntimeProvider = "user" | "platform";
 
 export type Agent = {
   id: string;
@@ -37,6 +38,9 @@ export type Agent = {
     lastUsedAt?: string | null;
   };
   appearanceConfig: AppearanceConfig;
+  runtimeProvider: AgentRuntimeProvider;
+  hasUserApiKey?: boolean;
+  model?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,7 +60,9 @@ export type CreateAgentPayload = Pick<Agent, "name" | "description" | "role"> &
       | "deploymentMode"
       | "sdkEnabled"
       | "apiEnabled"
+      | "runtimeProvider"
+      | "model"
     >
-  > & { appearanceConfig?: Partial<AppearanceConfig> };
+  > & { appearanceConfig?: Partial<AppearanceConfig>; apiKey?: string };
 
 export type UpdateAgentPayload = Partial<CreateAgentPayload>;

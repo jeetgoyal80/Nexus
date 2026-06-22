@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Activity,
@@ -25,6 +26,7 @@ import { OperationalIndicator } from "@/shared/components/ui/operational-indicat
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { useDocuments } from "@/features/knowledge/hooks/use-documents";
 import { useSendChatMessage } from "@/features/chat/hooks/use-chat-runtime";
+import { testGroqKey } from "@/features/runtime/api/test-groq-key";
 import {
   applyThemePreset,
   defaultAppearanceConfig,
@@ -35,7 +37,12 @@ import {
 import { ChatAppearancePreview } from "../appearance/chat-appearance-preview";
 import type { AppearanceConfig } from "../appearance/appearance.types";
 import { useAgent, useAgentMutations } from "../hooks/use-agents";
-import type { AgentOutputFormat, AgentTone, AgentVisibility } from "../types/agent.types";
+import type {
+  AgentOutputFormat,
+  AgentRuntimeProvider,
+  AgentTone,
+  AgentVisibility,
+} from "../types/agent.types";
 
 type BuilderTab = "general" | "personality" | "knowledge" | "runtime" | "appearance" | "deployment";
 
@@ -52,6 +59,9 @@ type BuilderDraft = {
   avatar: string;
   theme: string;
   appearanceConfig: AppearanceConfig;
+  runtimeProvider: AgentRuntimeProvider;
+  apiKey: string;
+  model: string;
 };
 
 const tabs: Array<{ id: BuilderTab; label: string }> = [
@@ -76,12 +86,20 @@ const createInitialDraft = (): BuilderDraft => ({
   avatar: "",
   theme: "light",
   appearanceConfig: defaultAppearanceConfig,
+  runtimeProvider: "user",
+  apiKey: "",
+  model: "llama-3.1-8b-instant",
 });
 
 export function AgentBuilderPage({ agentId }: { agentId: string }) {
   const agent = useAgent(agentId);
   const docs = useDocuments(agentId);
   const { update } = useAgentMutations();
+  const testKey = useMutation({
+    mutationFn: testGroqKey,
+    onSuccess: () => toast.success("Groq key connected"),
+    onError: (error) => toast.error(getApiErrorMessage(error, "Groq key test failed")),
+  });
   const [activeTab, setActiveTab] = useState<BuilderTab>("appearance");
   const [draft, setDraft] = useState<BuilderDraft>(createInitialDraft);
 
@@ -108,6 +126,9 @@ export function AgentBuilderPage({ agentId }: { agentId: string }) {
       avatar: agent.data.avatar,
       theme: agent.data.theme,
       appearanceConfig,
+      runtimeProvider: agent.data.runtimeProvider ?? "user",
+      apiKey: "",
+      model: agent.data.model ?? "llama-3.1-8b-instant",
     });
   }, [agent.data]);
 
@@ -132,6 +153,9 @@ export function AgentBuilderPage({ agentId }: { agentId: string }) {
           welcomeMessage: draft.appearanceConfig.welcomeMessage || draft.welcomeMessage,
           avatar: draft.appearanceConfig.avatarUrl || draft.avatar,
           theme: draft.appearanceConfig.theme,
+          runtimeProvider: draft.runtimeProvider,
+          model: draft.model,
+          ...(draft.apiKey ? { apiKey: draft.apiKey } : {}),
         },
       },
       {
@@ -192,7 +216,13 @@ export function AgentBuilderPage({ agentId }: { agentId: string }) {
           </>
         ) : (
           <>
-            <ConfigPanel activeTab={activeTab} draft={draft} setDraft={setDraft} />
+            <ConfigPanel
+              activeTab={activeTab}
+              draft={draft}
+              setDraft={setDraft}
+              onTestKey={() => testKey.mutate(draft.apiKey)}
+              isTestingKey={testKey.isPending}
+            />
             <StyledRuntimePreview agentId={agentId} draft={draft} />
             <RuntimePanel
               agentId={agentId}
@@ -201,6 +231,8 @@ export function AgentBuilderPage({ agentId }: { agentId: string }) {
               processingDocs={processingDocs}
               docs={docs.data ?? []}
               visibility={draft.visibility}
+              runtimeProvider={draft.runtimeProvider}
+              model={draft.model}
             />
           </>
         )}
@@ -213,10 +245,14 @@ function ConfigPanel({
   activeTab,
   draft,
   setDraft,
+  onTestKey,
+  isTestingKey,
 }: {
   activeTab: BuilderTab;
   draft: BuilderDraft;
   setDraft: React.Dispatch<React.SetStateAction<BuilderDraft>>;
+  onTestKey: () => void;
+  isTestingKey: boolean;
 }) {
   return (
     <PanelShell
@@ -300,19 +336,46 @@ function ConfigPanel({
 
       {activeTab === "runtime" && (
         <>
-          <Field label="Runtime identity">
-            <Input
-              value={draft.name}
-              onChange={(event) => setDraftValue(setDraft, "name", event.target.value)}
+          <Field label="Runtime provider">
+            <Segmented
+              value={draft.runtimeProvider}
+              values={["user", "platform"]}
+              onChange={(runtimeProvider) => setDraftValue(setDraft, "runtimeProvider", runtimeProvider)}
             />
           </Field>
-          <Field label="Output format">
-            <Segmented
-              value={draft.outputFormat}
-              values={["paragraph", "bullet_points", "structured_json"]}
-              onChange={(value) =>
-                setDraftValue(setDraft, "outputFormat", value as AgentOutputFormat)
-              }
+          <div className="rounded-lg border border-border bg-surface-1 p-3 text-sm text-muted-foreground">
+            {draft.runtimeProvider === "user"
+              ? "BYOK mode uses your Groq key and is not limited by hosted message quotas."
+              : "Platform runtime uses Nexus hosted Groq credentials and follows daily plan limits."}
+          </div>
+          {draft.runtimeProvider === "user" && (
+            <Field label="Groq API key">
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="gsk_..."
+                  value={draft.apiKey}
+                  onChange={(event) => setDraftValue(setDraft, "apiKey", event.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!draft.apiKey || isTestingKey}
+                  onClick={onTestKey}
+                  className="border-border bg-secondary"
+                >
+                  {isTestingKey ? "Testing..." : "Test"}
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                The key is encrypted on save and never returned to the frontend.
+              </p>
+            </Field>
+          )}
+          <Field label="Model">
+            <Input
+              value={draft.model}
+              onChange={(event) => setDraftValue(setDraft, "model", event.target.value)}
             />
           </Field>
         </>
@@ -968,6 +1031,8 @@ function RuntimePanel({
   processingDocs,
   docs,
   visibility,
+  runtimeProvider,
+  model,
 }: {
   agentId: string;
   activeTab: BuilderTab;
@@ -975,6 +1040,8 @@ function RuntimePanel({
   processingDocs: number;
   docs: { id: string; originalName: string; status: string }[];
   visibility: AgentVisibility;
+  runtimeProvider: AgentRuntimeProvider;
+  model: string;
 }) {
   return (
     <PanelShell
@@ -1032,11 +1099,15 @@ function RuntimePanel({
         <Label>Runtime</Label>
         <div className="mt-2 rounded-md border border-border bg-surface-1 p-3 text-xs">
           <p className="flex items-center gap-2 font-medium">
-            <Cpu className="h-3.5 w-3.5 text-primary" /> Groq runtime
+            <Cpu className="h-3.5 w-3.5 text-primary" />{" "}
+            {runtimeProvider === "user" ? "BYOK Groq runtime" : "Platform Groq runtime"}
           </p>
           <p className="mt-1 text-muted-foreground">
-            Streaming-ready - RAG orchestration - appearance-aware runtime shell
+            {runtimeProvider === "user"
+              ? "Unlimited AI usage because requests use your own Groq key."
+              : "Hosted runtime metered by your current daily plan limit."}
           </p>
+          <p className="mt-2 font-mono text-[11px] text-muted-foreground">model: {model}</p>
         </div>
       </div>
     </PanelShell>

@@ -11,20 +11,30 @@ export const Route = createFileRoute("/pricing")({
 const tiers = [
   {
     name: "Free",
-    price: "$0",
-    desc: "Bring your own Groq key.",
-    features: ["1 workspace", "Up to 3 agents", "10K msgs / mo", "Community support"],
+    price: "INR 0",
+    desc: "Build with your own Groq key and hosted starter usage.",
+    features: [
+      "BYOK unlimited AI usage",
+      "Unlimited bots",
+      "Unlimited documents",
+      "SDK access",
+      "Public deployment",
+      "Basic analytics",
+      "100 hosted messages/day",
+    ],
     cta: "Start free",
   },
   {
     name: "Pro",
-    price: "$49",
-    desc: "Hosted runtime, ready to scale.",
+    price: "INR 899",
+    desc: "Hosted runtime and premium SaaS controls.",
     features: [
-      "Unlimited agents",
-      "Managed runtime",
-      "100K msgs / mo",
-      "Analytics + observability",
+      "Everything in Free",
+      "1000 hosted messages/day",
+      "Conversation memory",
+      "Advanced analytics",
+      "Private bots",
+      "Priority runtime",
     ],
     cta: "Start Pro",
     featured: true,
@@ -32,8 +42,8 @@ const tiers = [
   {
     name: "Enterprise",
     price: "Custom",
-    desc: "For teams shipping AI to production.",
-    features: ["Dedicated infra", "SSO + RBAC", "SLA & priority support", "On-prem option"],
+    desc: "For teams scaling AI infrastructure.",
+    features: ["Dedicated infra", "SSO + RBAC", "SLA & priority support", "Custom limits"],
     cta: "Contact sales",
   },
 ];
@@ -67,7 +77,7 @@ function Pricing() {
               <p className="mt-2 text-4xl font-semibold tracking-tight">
                 {t.price}
                 <span className="text-sm text-muted-foreground">
-                  {t.price !== "Custom" && "/mo"}
+                  {t.name === "Pro" && "/mo"}
                 </span>
               </p>
               <p className="mt-2 text-sm text-muted-foreground">{t.desc}</p>
