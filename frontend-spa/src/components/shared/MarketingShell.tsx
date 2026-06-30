@@ -57,7 +57,7 @@ export function MarketingFooter() {
         <div className="grid grid-cols-3 gap-10 text-sm">
           <div>
             <p className="mb-2 text-xs font-mono uppercase tracking-wider text-muted-foreground">
-              Product
+              Products
             </p>
             <ul className="space-y-2">
               <li>
