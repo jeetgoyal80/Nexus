@@ -1,0 +1,31 @@
+name: Health Check
+
+on:
+
+  workflow_run:
+
+    workflows:
+
+      - Deploy Frontend
+
+      - Deploy Backend
+
+      - Deploy RAG
+
+    types:
+
+      - completed
+
+jobs:
+
+  health:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - run: |
+
+          curl https://nexusai-tech.duckdns.org
+
+          curl https://nexusai-tech.duckdns.org/api/health

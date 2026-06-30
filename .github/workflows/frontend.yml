@@ -1,0 +1,41 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend-spa/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            set -e
+
+            cd ~/apps/Nexus
+
+            git pull origin main
+
+            cd frontend-spa
+
+            npm install
+
+            npm run build
+
+            sudo rm -rf /usr/share/nginx/nexus/*
+
+            sudo cp -r dist/* /usr/share/nginx/nexus/
+
+            sudo systemctl reload nginx
+
+            echo "Frontend deployed"

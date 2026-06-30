@@ -1,0 +1,42 @@
+name: Deploy RAG
+
+on:
+
+  push:
+
+    branches: [main]
+
+    paths:
+
+      - "rag-service/**"
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/ssh-action@v1
+
+        with:
+
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+            set -e
+
+            cd ~/apps/Nexus
+
+            git pull origin main
+
+            docker compose build rag-service
+
+            docker compose up -d rag-service
+
+            docker image prune -f
