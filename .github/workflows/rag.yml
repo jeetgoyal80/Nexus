@@ -1,42 +1,78 @@
 name: Deploy RAG
 
 on:
-
   push:
-
-    branches: [main]
-
+    branches:
+      - main
     paths:
-
       - "rag-service/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rag-production
+  cancel-in-progress: true
 
 jobs:
-
   deploy:
-
+    name: Build and deploy RAG service
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: appleboy/ssh-action@v1
-
+      - name: Deploy RAG on EC2
+        uses: appleboy/ssh-action@v1.2.2
         with:
-
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-
+          command_timeout: 30m
           script: |
-            set -e
+            set -Eeuo pipefail
 
-            cd ~/apps/Nexus
+            DEPLOY_DIR="$HOME/apps/Nexus"
+            TARGET_SHA="${{ github.sha }}"
 
-            git pull origin main
+            log() { printf '[%s] %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"; }
+            show_logs() {
+              log "Deployment failed. Recent RAG logs:"
+              docker compose logs --tail=120 rag-service || true
+            }
+            trap show_logs ERR
 
+            log "Updating repository"
+            cd "$DEPLOY_DIR"
+            git fetch --prune origin main
+            git checkout main
+            git reset --hard "$TARGET_SHA"
+
+            log "Building RAG image"
             docker compose build rag-service
 
-            docker compose up -d rag-service
+            log "Starting RAG service"
+            docker compose up -d --no-deps rag-service
 
+            log "Verifying RAG container health"
+            timeout 180 sh -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" chatbot-rag-service 2>/dev/null)" = "healthy" ]; do sleep 5; done'
+
+            log "Cleaning unused Docker images"
             docker image prune -f
+
+            trap - ERR
+            log "RAG service deployed successfully"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          {
+            echo "## RAG Deployment"
+            echo "- Status: ${{ job.status }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- Service: rag-service"
+            echo "- Target: EC2 Docker Compose"
+          } >> "$GITHUB_STEP_SUMMARY"

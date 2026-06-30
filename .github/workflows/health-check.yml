@@ -1,31 +1,70 @@
 name: Health Check
 
 on:
-
   workflow_run:
-
     workflows:
-
       - Deploy Frontend
-
       - Deploy Backend
-
       - Deploy RAG
-
+      - Full Deployment
     types:
-
       - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-health-check
+  cancel-in-progress: true
 
 jobs:
-
   health:
-
+    name: Verify production health
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - name: Check public endpoints
+        shell: bash
+        run: |
+          set -Eeuo pipefail
 
-      - run: |
+          FRONTEND_URL="https://nexusai-tech.duckdns.org"
+          BACKEND_HEALTH_URL="https://nexusai-tech.duckdns.org/api/health"
 
-          curl https://nexusai-tech.duckdns.org
+          check_url() {
+            local name="$1"
+            local url="$2"
+            local expected_status="$3"
 
-          curl https://nexusai-tech.duckdns.org/api/health
+            echo "Checking ${name}: ${url}"
+            for attempt in {1..12}; do
+              status="$(curl --silent --show-error --location --max-time 10 --output /tmp/health-body --write-out '%{http_code}' "$url" || true)"
+              if [[ "$status" == "$expected_status" ]]; then
+                echo "${name} healthy with HTTP ${status}"
+                return 0
+              fi
+
+              echo "Attempt ${attempt}/12 failed for ${name}: HTTP ${status}"
+              cat /tmp/health-body || true
+              sleep 10
+            done
+
+            echo "${name} failed health check"
+            return 1
+          }
+
+          check_url "frontend" "$FRONTEND_URL" "200"
+          check_url "backend" "$BACKEND_HEALTH_URL" "200"
+
+      - name: Health check summary
+        if: always()
+        run: |
+          {
+            echo "## Production Health Check"
+            echo "- Status: ${{ job.status }}"
+            echo "- Frontend: https://nexusai-tech.duckdns.org"
+            echo "- Backend: https://nexusai-tech.duckdns.org/api/health"
+          } >> "$GITHUB_STEP_SUMMARY"

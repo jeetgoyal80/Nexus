@@ -2,40 +2,90 @@ name: Deploy Frontend
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - "frontend-spa/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
+    name: Build and deploy frontend SPA
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: appleboy/ssh-action@v1
+      - name: Deploy frontend on EC2
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-
+          command_timeout: 20m
           script: |
-            set -e
+            set -Eeuo pipefail
 
-            cd ~/apps/Nexus
+            DEPLOY_DIR="$HOME/apps/Nexus"
+            TARGET_SHA="${{ github.sha }}"
+            APP_DIR="$DEPLOY_DIR/frontend-spa"
+            WEB_ROOT="/usr/share/nginx/nexus"
+            BACKUP_DIR="/usr/share/nginx/nexus-backups/${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
 
-            git pull origin main
+            log() { printf '[%s] %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"; }
+            rollback() {
+              log "Deployment failed. Attempting frontend rollback from $BACKUP_DIR"
+              if sudo test -d "$BACKUP_DIR"; then
+                sudo rsync -a --delete "$BACKUP_DIR"/ "$WEB_ROOT"/
+                sudo nginx -t && sudo systemctl reload nginx || true
+              fi
+            }
+            trap rollback ERR
 
-            cd frontend-spa
+            log "Updating repository"
+            cd "$DEPLOY_DIR"
+            git fetch --prune origin main
+            git checkout main
+            git reset --hard "$TARGET_SHA"
 
-            npm install
+            log "Installing frontend dependencies"
+            cd "$APP_DIR"
+            npm ci
 
+            log "Building frontend"
             npm run build
+            test -f dist/index.html
 
-            sudo rm -rf /usr/share/nginx/nexus/*
+            log "Publishing static assets to $WEB_ROOT"
+            sudo mkdir -p "$WEB_ROOT" "$BACKUP_DIR"
+            if sudo test -n "$(sudo find "$WEB_ROOT" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)"; then
+              sudo rsync -a "$WEB_ROOT"/ "$BACKUP_DIR"/
+            fi
+            sudo rsync -a --delete dist/ "$WEB_ROOT"/
 
-            sudo cp -r dist/* /usr/share/nginx/nexus/
-
+            log "Validating and reloading Nginx"
+            sudo nginx -t
             sudo systemctl reload nginx
 
-            echo "Frontend deployed"
+            trap - ERR
+            log "Frontend deployed successfully"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          {
+            echo "## Frontend Deployment"
+            echo "- Status: ${{ job.status }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- Service: frontend-spa"
+            echo "- Target: EC2 Nginx static root"
+          } >> "$GITHUB_STEP_SUMMARY"

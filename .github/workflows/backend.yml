@@ -2,39 +2,78 @@ name: Deploy Backend
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - "backend/**"
       - "docker-compose.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
-
+    name: Build and deploy backend services
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: appleboy/ssh-action@v1
-
+      - name: Deploy backend on EC2
+        uses: appleboy/ssh-action@v1.2.2
         with:
-
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-
+          command_timeout: 25m
           script: |
-            set -e
+            set -Eeuo pipefail
 
-            cd ~/apps/Nexus
+            DEPLOY_DIR="$HOME/apps/Nexus"
+            TARGET_SHA="${{ github.sha }}"
 
-            git pull origin main
+            log() { printf '[%s] %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$*"; }
+            show_logs() {
+              log "Deployment failed. Recent backend logs:"
+              docker compose logs --tail=120 backend ingestion-worker || true
+            }
+            trap show_logs ERR
 
-            docker compose build backend
+            log "Updating repository"
+            cd "$DEPLOY_DIR"
+            git fetch --prune origin main
+            git checkout main
+            git reset --hard "$TARGET_SHA"
 
-            docker compose up -d backend
+            log "Building backend and ingestion worker images"
+            docker compose build backend ingestion-worker
 
+            log "Starting backend services"
+            docker compose up -d --no-deps backend ingestion-worker
+
+            log "Verifying backend container health"
+            timeout 120 sh -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" chatbot-backend 2>/dev/null)" = "healthy" ]; do sleep 5; done'
+
+            log "Cleaning unused Docker images"
             docker image prune -f
 
-            echo "Backend deployed"
+            trap - ERR
+            log "Backend deployed successfully"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          {
+            echo "## Backend Deployment"
+            echo "- Status: ${{ job.status }}"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- Services: backend, ingestion-worker"
+            echo "- Target: EC2 Docker Compose"
+          } >> "$GITHUB_STEP_SUMMARY"
